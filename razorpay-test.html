@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Razorpay Payment Test</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <h2>Razorpay Payment Page Test</h2>
+    <button id="payBtn">Pay Now</button>
+
+    <script>
+      document.getElementById("payBtn").onclick = function () {
+        const options = {
+          key: "rzp_test_RvkGMxONT2TO7f",      // ✅ from Postman
+          amount: 750000,                     // ✅ from Postman (paise)
+          currency: "INR",
+          name: "Vehicle Rental Test",
+          description: "Booking Payment",
+
+          // ✅ VERY IMPORTANT: fresh order from backend
+          order_id: "order_RvuhrNRsCPDc8c",
+
+          handler: function (response) {
+            alert("Payment UI Success!");
+            console.log("RAZORPAY RESPONSE:", response);
+
+            /*
+              response.razorpay_payment_id
+              response.razorpay_order_id
+              response.razorpay_signature
+            */
+          },
+
+          theme: {
+            color: "#0f172a"
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      };
+    </script>
+  </body>
+</html>
