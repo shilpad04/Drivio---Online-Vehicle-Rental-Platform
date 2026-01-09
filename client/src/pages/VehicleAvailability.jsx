@@ -14,9 +14,7 @@ export default function VehicleAvailability() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  /* =======================
-     PREPARE PAYMENT (SUMMARY)
-  ======================= */
+  //  PREPARE PAYMENT 
   useEffect(() => {
     if (!startDate || !endDate) {
       navigate("/vehicles");
@@ -45,9 +43,7 @@ export default function VehicleAvailability() {
     preparePayment();
   }, [id, startDate, endDate, navigate]);
 
-  /* =======================
-     START PAYMENT
-  ======================= */
+  // START PAYMENT
   const startPayment = async () => {
     if (!summary) return;
 
@@ -55,7 +51,7 @@ export default function VehicleAvailability() {
       setPaying(true);
       setError("");
 
-      // 1️⃣ Create Razorpay order
+      // 1️ Create Razorpay order
       const res = await api.post("/payments/create-order", {
         vehicleId: id,
         amount: summary.totalAmount,
@@ -63,7 +59,7 @@ export default function VehicleAvailability() {
 
       const { orderId, key, currency } = res.data;
 
-      // 2️⃣ Razorpay options
+      // 2️ Razorpay options
       const options = {
         key,
         amount: summary.totalAmount * 100,
@@ -74,7 +70,7 @@ export default function VehicleAvailability() {
 
         handler: async function (response) {
           try {
-            // 3️⃣ Verify payment (this creates booking)
+            // 3️ Verify payment 
             await api.post("/payments/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -112,9 +108,6 @@ export default function VehicleAvailability() {
     }
   };
 
-  /* =======================
-     UI STATES
-  ======================= */
   if (loading) {
     return <div className="min-h-screen pt-32 text-center">Loading...</div>;
   }

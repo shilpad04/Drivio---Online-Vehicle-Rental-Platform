@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import ConfirmModal from "../components/ConfirmModal";
+import { paginate } from "../utils/pagination";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -56,11 +57,10 @@ export default function VehicleBookings() {
       ? bookings
       : bookings.filter((b) => b.status === statusFilter);
 
-  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedBookings = filteredBookings.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
+  const { totalPages, paginatedItems: paginatedBookings } = paginate(
+    filteredBookings,
+    currentPage,
+    ITEMS_PER_PAGE
   );
 
   const goBackToDashboard = () => {
@@ -109,8 +109,7 @@ export default function VehicleBookings() {
         ? "bookings-owner.csv"
         : "bookings-renter.csv";
 
-    const csvData =
-      "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+    const csvData = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
 
     const link = document.createElement("a");
     link.setAttribute("href", csvData);
@@ -127,9 +126,7 @@ export default function VehicleBookings() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">
-        {error}
-      </div>
+      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
     );
   }
 
@@ -137,9 +134,10 @@ export default function VehicleBookings() {
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
       <button
         onClick={goBackToDashboard}
-        className="mb-6 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
       >
-        ← Back
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
       </button>
 
       <div className="flex justify-between items-center mb-6">
@@ -235,7 +233,7 @@ export default function VehicleBookings() {
   );
 }
 
-/* ================= BookingCard unchanged ================= */
+/*  BookingCard */
 
 function BookingCard({ booking, role, refresh }) {
   const { vehicle, renter, startDate, endDate, status, _id } = booking;
@@ -275,7 +273,8 @@ function BookingCard({ booking, role, refresh }) {
   return (
     <div
       onClick={() => setOpen(!open)}
-      className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition cursor-pointer"
+      className={`bg-white rounded-xl shadow p-0 cursor-pointer relative
+              ${open ? "z-20" : "z-0"}`}
     >
       <div className="p-5 flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-60">
@@ -329,9 +328,7 @@ function BookingCard({ booking, role, refresh }) {
 
           {(role === "OWNER" || role === "ADMIN") && renter && (
             <div className="pt-3 border-t">
-              <p className="font-medium text-gray-700 mb-1">
-                Renter Details
-              </p>
+              <p className="font-medium text-gray-700 mb-1">Renter Details</p>
               <p>Name: {renter.name}</p>
               <p className="break-all">Email: {renter.email}</p>
             </div>

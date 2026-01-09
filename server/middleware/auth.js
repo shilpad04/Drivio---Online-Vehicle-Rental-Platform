@@ -24,11 +24,17 @@ module.exports = async (req, res, next) => {
     }
 
     const user = await User.findById(userId).select(
-      "_id name email role"
+      "_id name email role isActive"
     );
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
+    }
+
+    if (!user.isActive) {
+      return res
+        .status(403)
+        .json({ message: "Account deactivated" });
     }
 
     req.user = {

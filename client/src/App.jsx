@@ -35,8 +35,12 @@ import OwnerReviews from "./pages/dashboard/OwnerReviews";
 // Profile
 import UserProfile from "./pages/UserProfile";
 
-// 🔹 NEW: Admin Inquiries Page
+// Admin – Support
 import AdminInquiries from "./pages/dashboard/AdminInquiries";
+
+// ADMIN – USER MANAGEMENT
+import AdminUsers from "./pages/dashboard/AdminUsers";
+import AdminUserDetails from "./pages/dashboard/AdminUserDetails";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,7 +125,26 @@ function App() {
           }
         />
 
-        {/* 🔹 ADMIN – SUPPORT INQUIRIES */}
+        {/* ADMIN – USER MANAGEMENT */}
+        <Route
+          path="/dashboard/admin/users"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/admin/users/:id"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <AdminUserDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADMIN – SUPPORT INQUIRIES */}
         <Route
           path="/dashboard/admin/inquiries"
           element={
@@ -227,7 +250,6 @@ function App() {
           }
         />
 
-        {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 

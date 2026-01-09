@@ -2,12 +2,10 @@ export default function HowItWorks() {
   return (
     <section className="pt-32 pb-20 bg-gray-100 min-h-screen">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Page Header */}
         <h1 className="text-4xl font-bold text-gray-900 mb-12">
           How It Works
         </h1>
 
-        {/* Steps */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {/* Step 1 */}
           <div className="bg-black text-white rounded-xl p-8">

@@ -52,7 +52,7 @@ exports.getRenterHistory = async (req, res) => {
 // OWNER: Get completed rentals for my vehicles
 exports.getOwnerHistory = async (req, res) => {
   try {
-    // ✅ auto-complete expired bookings
+    // auto-complete expired bookings
     await completeExpiredBookings();
 
     const { search, startDate, endDate } = req.query;

@@ -1,8 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 
-// GET USER PROFILE
-// GET /api/users/profile
+// GET USER PROFILE - GET /api/users/profile
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -17,8 +16,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// UPDATE USER PROFILE
-// PUT /api/users/profile
+// UPDATE USER PROFILE - PUT /api/users/profile
 exports.updateProfile = async (req, res) => {
   try {
     const { name, email, password } = req.body;

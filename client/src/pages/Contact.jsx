@@ -136,7 +136,7 @@ export default function Contact() {
         </div>
       )}
 
-      {/* RENTER / OWNER VIEW (UNCHANGED) */}
+      {/* RENTER / OWNER VIEW */}
       {user && (
         <>
           <form

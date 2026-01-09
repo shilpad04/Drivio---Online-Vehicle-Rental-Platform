@@ -3,9 +3,7 @@ const Vehicle = require("../models/Vehicle");
 const Booking = require("../models/Booking");
 const Review = require("../models/Review");
 
-/* =====================================
-   ADMIN ANALYTICS
-===================================== */
+//  ADMIN ANALYTICS
 exports.adminOverview = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -51,9 +49,7 @@ exports.adminOverview = async (req, res) => {
   }
 };
 
-/* =====================================
-   OWNER ANALYTICS
-===================================== */
+//  OWNER ANALYTICS
 exports.ownerOverview = async (req, res) => {
   try {
     const ownerId = req.user.id;
@@ -120,9 +116,7 @@ exports.ownerOverview = async (req, res) => {
   }
 };
 
-/* =====================================
-   RENTER ANALYTICS (FIXED – CORRECT)
-===================================== */
+//  RENTER ANALYTICS
 exports.renterOverview = async (req, res) => {
   try {
     const renterId = req.user.id;

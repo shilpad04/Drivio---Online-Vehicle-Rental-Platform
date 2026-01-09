@@ -24,19 +24,11 @@ export default function AdminDashboard() {
       {/* Tiles */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Tile
-          title="Users"
+          title="Analytics"
           value="View"
-          color="bg-blue-600"
-          icon="fa-users"
-          onClick={() => navigate("/dashboard/admin/users")}
-        />
-
-        <Tile
-          title="Vehicles"
-          value="View"
-          color="bg-indigo-600"
-          icon="fa-car"
-          onClick={() => navigate("/vehicles?view=admin")}
+          color="bg-gray-800"
+          icon="fa-chart-line"
+          onClick={() => setShowAnalytics((prev) => !prev)}
         />
 
         <Tile
@@ -55,7 +47,14 @@ export default function AdminDashboard() {
           onClick={() => navigate("/dashboard/admin/payments")}
         />
 
-        {/* Support Inquiries */}
+        <Tile
+          title="Ratings & Reviews"
+          value="View"
+          color="bg-yellow-600"
+          icon="fa-star"
+          onClick={() => navigate("/dashboard/admin/reviews")}
+        />
+
         <Tile
           title="Support Inquiries"
           value="Manage"
@@ -65,27 +64,25 @@ export default function AdminDashboard() {
         />
 
         <Tile
-          title="Analytics"
+          title="Users"
           value="View"
-          color="bg-gray-800"
-          icon="fa-chart-line"
-          onClick={() => setShowAnalytics((prev) => !prev)}
+          color="bg-blue-600"
+          icon="fa-users"
+          onClick={() => navigate("/dashboard/admin/users")}
         />
 
         <Tile
-          title="Ratings & Reviews"
+          title="Vehicles"
           value="View"
-          color="bg-yellow-600"
-          icon="fa-star"
-          onClick={() => navigate("/dashboard/admin/reviews")}
+          color="bg-indigo-600"
+          icon="fa-car"
+          onClick={() => navigate("/vehicles?view=admin")}
         />
       </div>
 
       {showAnalytics && (
         <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-6">
-            Analytics Overview
-          </h2>
+          <h2 className="text-xl font-semibold mb-6">Analytics Overview</h2>
 
           <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             <AnalyticsCard

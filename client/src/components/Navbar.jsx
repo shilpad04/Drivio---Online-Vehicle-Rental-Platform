@@ -75,6 +75,10 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
     navigate("/");
   };
 
+  const handleSearch = () => {
+    navigate("/vehicles");
+  };
+
   return (
     <>
       <nav
@@ -97,10 +101,16 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search vehicle or location"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  placeholder="Search vehicle"
                   className="bg-transparent px-4 py-2 outline-none text-sm w-56"
                 />
-                <button className="px-4 text-gray-600">
+                <button
+                  onClick={handleSearch}
+                  className="px-4 text-gray-600"
+                >
                   <i className="fa-solid fa-magnifying-glass"></i>
                 </button>
               </div>
@@ -128,7 +138,10 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
             {!isAuthenticated ? (
               <div className="hidden md:flex gap-6 text-sm font-medium">
                 <button onClick={openLogin}>Login</button>
-                <button className="text-blue-600 font-semibold" onClick={openRegister}>
+                <button
+                  className="text-blue-600 font-semibold"
+                  onClick={openRegister}
+                >
                   Register
                 </button>
               </div>
@@ -169,7 +182,10 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
               </div>
             )}
 
-            <button className="md:hidden text-xl" onClick={() => setOpen(!open)}>
+            <button
+              className="md:hidden text-xl"
+              onClick={() => setOpen(!open)}
+            >
               <i className={`fa-solid ${open ? "fa-xmark" : "fa-bars"}`} />
             </button>
           </div>

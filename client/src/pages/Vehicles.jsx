@@ -3,22 +3,29 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import VehicleCard from "../components/VehicleCard";
 import { useAuth } from "../context/AuthContext";
+import FilterBar from "../components/FilterBar";
+
 
 const ITEMS_PER_PAGE = 6;
 
-export default function Vehicles() {
+export default function Vehicles({ searchQuery }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const isAdmin = user?.role === "ADMIN";
   const isOwner = user?.role === "OWNER";
-  const isRenter = user?.role === "RENTER";
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [vehicleType, setVehicleType] = useState("");
+  const [category, setCategory] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -36,18 +43,28 @@ export default function Vehicles() {
           const filtered =
             statusFilter === "all"
               ? res.data
-              : res.data.filter(
-                  (v) => v.status === statusFilter
-                );
+              : res.data.filter((v) => v.status === statusFilter);
 
           setVehicles(filtered);
         } else {
-          res = await api.get("/vehicles");
+          const params = {};
+
+          if (searchQuery && searchQuery.trim()) {
+            params.search = searchQuery.trim();
+          }
+
+          if (locationFilter) params.location = locationFilter;
+          if (vehicleType) params.vehicleType = vehicleType;
+          if (category) params.category = category;
+          if (minPrice) params.minPrice = minPrice;
+          if (maxPrice) params.maxPrice = maxPrice;
+
+          res = await api.get("/vehicles", { params });
           setVehicles(res.data);
         }
 
         setCurrentPage(1);
-      } catch (error) {
+      } catch {
         setVehicles([]);
       } finally {
         setLoading(false);
@@ -55,10 +72,23 @@ export default function Vehicles() {
     };
 
     fetchVehicles();
-  }, [user, isAdmin, isOwner, statusFilter]);
+  }, [
+    user,
+    isAdmin,
+    isOwner,
+    statusFilter,
+    searchQuery,
+    vehicleType,
+    category,
+    locationFilter,
+    minPrice,
+    maxPrice,
+  ]);
 
   const handleBack = () => {
-    navigate(-1);
+    if (isOwner) navigate("/dashboard/owner");
+    else if (isAdmin) navigate("/dashboard/admin");
+    else navigate("/");
   };
 
   const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE);
@@ -78,7 +108,6 @@ export default function Vehicles() {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
-      {/* BACK BUTTON */}
       <button
         onClick={handleBack}
         className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
@@ -87,7 +116,21 @@ export default function Vehicles() {
         Back
       </button>
 
-      {/* HEADER */}
+      {!isAdmin && !isOwner && (
+        <FilterBar
+          vehicleType={vehicleType}
+          setVehicleType={setVehicleType}
+          category={category}
+          setCategory={setCategory}
+          location={locationFilter}
+          setLocation={setLocationFilter}
+          minPrice={minPrice}
+          setMinPrice={setMinPrice}
+          maxPrice={maxPrice}
+          setMaxPrice={setMaxPrice}
+        />
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">
           {isAdmin
@@ -111,7 +154,6 @@ export default function Vehicles() {
         )}
       </div>
 
-      {/* VEHICLE GRID */}
       {paginatedVehicles.length === 0 ? (
         <p className="text-gray-500">No vehicles found.</p>
       ) : (
@@ -122,7 +164,6 @@ export default function Vehicles() {
         </div>
       )}
 
-      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-10 gap-2">
           <button

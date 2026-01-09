@@ -27,7 +27,6 @@ export default function ImageUpload({ images, setImages }) {
 
     try {
       const auth = await getAuthParams();
-      console.log("AUTH PARAMS:", auth);
 
       for (const file of files) {
         const res = await imagekit.upload({
@@ -38,7 +37,6 @@ export default function ImageUpload({ images, setImages }) {
           expire: auth.expire,
         });
 
-        console.log("UPLOAD SUCCESS:", res);
         setImages((prev) => [...prev, res.url]);
       }
     } catch (err) {
@@ -49,33 +47,91 @@ export default function ImageUpload({ images, setImages }) {
     }
   };
 
+  const handleRemove = (indexToRemove) => {
+    setImages((prev) =>
+      prev.filter((_, index) => index !== indexToRemove)
+    );
+  };
+
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-gray-700">
-        Vehicle Images
+    <div className="space-y-4">
+      {/* Upload Box */}
+      <label
+        className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition
+          ${
+            uploading
+              ? "bg-gray-100 border-gray-300 cursor-not-allowed"
+              : "border-gray-300 hover:border-blue-500 hover:bg-blue-50"
+          }`}
+      >
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleUpload}
+          disabled={uploading}
+          className="hidden"
+        />
+
+        <svg
+          className="h-10 w-10 text-gray-400 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4a1 1 0 011-1h8a1 1 0 011 1v12m-4-4l4 4m0 0l-4 4m4-4H3"
+          />
+        </svg>
+
+        <p className="text-sm font-medium text-gray-700">
+          {uploading
+            ? "Uploading images..."
+            : "Click to upload or select multiple images"}
+        </p>
+
+        <p className="text-xs text-gray-400 mt-1">
+          JPG, PNG, WEBP supported
+        </p>
       </label>
 
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={handleUpload}
-      />
-
+      {/* Uploading text */}
       {uploading && (
-        <p className="text-sm text-blue-600">Uploading…</p>
+        <p className="text-sm text-blue-600 font-medium">
+          Uploading… please wait
+        </p>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
-        {images.map((url, i) => (
-          <img
-            key={i}
-            src={url}
-            alt="vehicle"
-            className="h-24 w-full object-cover rounded border"
-          />
-        ))}
-      </div>
+      {/* Image Preview with Remove */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {images.map((url, index) => (
+            <div
+              key={index}
+              className="relative group rounded-lg overflow-hidden border bg-white"
+            >
+              {/* Remove button */}
+              <button
+                type="button"
+                onClick={() => handleRemove(index)}
+                className="absolute top-2 right-2 z-10 hidden group-hover:flex items-center justify-center h-7 w-7 rounded-full bg-black/70 text-white text-sm hover:bg-red-600"
+                title="Remove image"
+              >
+                ✕
+              </button>
+
+              <img
+                src={url}
+                alt="vehicle"
+                className="h-28 w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

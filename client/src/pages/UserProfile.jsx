@@ -77,9 +77,7 @@ export default function UserProfile() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">
-        {error}
-      </div>
+      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
     );
   }
 
@@ -88,9 +86,10 @@ export default function UserProfile() {
       <div className="max-w-5xl mx-auto">
         <button
           onClick={goBackToDashboard}
-          className="mb-8 text-sm text-blue-600 hover:underline"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
         >
-          ← Back
+          <i className="fa-solid fa-arrow-left"></i>
+          Back
         </button>
 
         <div className="flex justify-center">

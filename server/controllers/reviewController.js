@@ -1,11 +1,7 @@
 const Review = require("../models/Review");
 const Booking = require("../models/Booking");
 
-/**
- * =====================================
- * ADD REVIEW (RENTER ONLY)
- * =====================================
- */
+// ADD REVIEW (RENTER ONLY)
 exports.addReview = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -26,9 +22,6 @@ exports.addReview = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    /**
-     * ✅ SAFELY resolve renter id from booking
-     */
     const bookingRenterId =
       booking.renter && booking.renter._id
         ? booking.renter._id.toString()
@@ -36,10 +29,6 @@ exports.addReview = async (req, res) => {
         ? booking.renter.toString()
         : null;
 
-    /**
-     * ✅ SAFELY resolve logged-in user id
-     * (your project uses req.user.id)
-     */
     const userId =
       req.user._id?.toString() ||
       req.user.id?.toString() ||
@@ -65,9 +54,6 @@ exports.addReview = async (req, res) => {
       });
     }
 
-    /**
-     * ✅ SAFE vehicleId handling
-     */
     const vehicleId =
       booking.vehicle && booking.vehicle._id
         ? booking.vehicle._id
@@ -90,11 +76,7 @@ exports.addReview = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * GET REVIEWS FOR A VEHICLE (PUBLIC)
- * =====================================
- */
+// GET REVIEWS FOR A VEHICLE 
 exports.getVehicleReviews = async (req, res) => {
   try {
     const reviews = await Review.find({
@@ -109,11 +91,9 @@ exports.getVehicleReviews = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN: GET ALL REVIEWS
- * =====================================
- */
+
+// ADMIN: GET ALL REVIEWS
+
 exports.getAllReviewsForAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {

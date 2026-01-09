@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import {
-  getAllPaymentsAdmin,
-  getMyPayments,
-} from "../api/payment";
+import { getAllPaymentsAdmin, getMyPayments } from "../api/payment";
 import InvoiceModal from "../components/InvoiceModal";
+import { paginate } from "../utils/pagination";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -17,7 +15,6 @@ export default function Payments() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [page, setPage] = useState(1);
 
   const [showInvoice, setShowInvoice] = useState(false);
@@ -25,7 +22,6 @@ export default function Payments() {
 
   useEffect(() => {
     if (role) fetchPayments();
-    // eslint-disable-next-line
   }, [role]);
 
   const fetchPayments = async () => {
@@ -39,6 +35,7 @@ export default function Payments() {
           : await getMyPayments();
 
       setPayments(res || []);
+      setPage(1);
     } catch {
       setError("Failed to load payments");
     } finally {
@@ -46,18 +43,13 @@ export default function Payments() {
     }
   };
 
-  const totalPages = Math.ceil(
-    payments.length / ITEMS_PER_PAGE
+  const { totalPages, paginatedItems: paginatedPayments } = paginate(
+    payments,
+    page,
+    ITEMS_PER_PAGE
   );
 
-  const paginatedPayments = payments.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
-  );
-
-  // =====================================
-  // CSV EXPORT — PHASE 4 (FIXED)
-  // =====================================
+  //  CSV EXPORT
   const exportToCSV = () => {
     if (!payments.length) return;
 
@@ -73,14 +65,7 @@ export default function Payments() {
             "Order ID",
             "Payment ID",
           ]
-        : [
-            "Date",
-            "Vehicle",
-            "Amount",
-            "Status",
-            "Order ID",
-            "Payment ID",
-          ];
+        : ["Date", "Vehicle", "Amount", "Status", "Order ID", "Payment ID"];
 
     const rows = payments.map((p) => {
       const row = [
@@ -89,15 +74,12 @@ export default function Payments() {
       ];
 
       if (role === "ADMIN") {
-        row.push(
-          p.renter?.name || "",
-          p.renter?.email || ""
-        );
+        row.push(p.renter?.name || "", p.renter?.email || "");
       }
 
       row.push(
         p.amount,
-        p.status,
+        p.status === "CREATED" ? "FAILED" : p.status,
         p.razorpayOrderId || "",
         p.razorpayPaymentId || ""
       );
@@ -110,11 +92,7 @@ export default function Payments() {
       "\n" +
       rows
         .map((r) =>
-          r
-            .map((v) =>
-              `"${String(v).replace(/"/g, '""')}"`
-            )
-            .join(",")
+          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
         )
         .join("\n");
 
@@ -123,13 +101,11 @@ export default function Payments() {
     });
 
     const url = window.URL.createObjectURL(blob);
-
     const link = document.createElement("a");
+
     link.href = url;
     link.download =
-      role === "ADMIN"
-        ? "payments-admin.csv"
-        : "payments-renter.csv";
+      role === "ADMIN" ? "payments-admin.csv" : "payments-renter.csv";
 
     document.body.appendChild(link);
     link.click();
@@ -151,18 +127,15 @@ export default function Payments() {
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
       <button
-        onClick={() =>
-          navigate(`/dashboard/${role?.toLowerCase()}`)
-        }
-        className="mb-6 text-sm text-blue-600 hover:underline"
+        onClick={() => navigate(`/dashboard/${role?.toLowerCase()}`)}
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
       >
-        ← Back
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
       </button>
 
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">
-          Payments
-        </h1>
+        <h1 className="text-2xl font-bold">Payments</h1>
 
         {payments.length > 0 && (
           <button
@@ -174,117 +147,78 @@ export default function Payments() {
         )}
       </div>
 
-      {error && (
-        <p className="text-red-600 mb-4">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-red-600 mb-4">{error}</p>}
 
       {payments.length === 0 ? (
-        <p className="text-gray-600">
-          No payments found.
-        </p>
+        <p className="text-gray-600">No payments found.</p>
       ) : (
         <>
           <div className="overflow-x-auto bg-white rounded-xl shadow">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left">
-                    Date
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    Vehicle
-                  </th>
-
+                  <th className="px-4 py-3 text-left">Date</th>
+                  <th className="px-4 py-3 text-left">Vehicle</th>
                   {role === "ADMIN" && (
-                    <th className="px-4 py-3 text-left">
-                      Renter
-                    </th>
+                    <th className="px-4 py-3 text-left">Renter</th>
                   )}
-
-                  <th className="px-4 py-3 text-left">
-                    Amount
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    Order ID
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    Payment ID
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    Invoice
-                  </th>
+                  <th className="px-4 py-3 text-left">Amount</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Order ID</th>
+                  <th className="px-4 py-3 text-left">Payment ID</th>
+                  <th className="px-4 py-3 text-left">Invoice</th>
                 </tr>
               </thead>
 
               <tbody>
                 {paginatedPayments.map((p) => (
-                  <tr
-                    key={p._id}
-                    className="border-t hover:bg-gray-50"
-                  >
+                  <tr key={p._id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      {new Date(
-                        p.createdAt
-                      ).toLocaleDateString()}
+                      {new Date(p.createdAt).toLocaleDateString()}
                     </td>
-
                     <td className="px-4 py-3">
-                      {p.vehicle?.make}{" "}
-                      {p.vehicle?.model}
+                      {p.vehicle?.make} {p.vehicle?.model}
                     </td>
-
                     {role === "ADMIN" && (
                       <td className="px-4 py-3">
-                        <div className="font-medium">
-                          {p.renter?.name}
-                        </div>
+                        <div className="font-medium">{p.renter?.name}</div>
                         <div className="text-xs text-gray-500">
                           {p.renter?.email}
                         </div>
                       </td>
                     )}
-
-                    <td className="px-4 py-3 font-semibold">
-                      ₹{p.amount}
-                    </td>
-
+                    <td className="px-4 py-3 font-semibold">₹{p.amount}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded text-xs font-semibold ${
                           p.status === "SUCCESS"
                             ? "bg-green-100 text-green-700"
-                            : p.status === "FAILED"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {p.status}
+                        {p.status === "CREATED" ? "FAILED" : p.status}
                       </span>
                     </td>
-
                     <td className="px-4 py-3 text-xs">
                       {p.razorpayOrderId}
                     </td>
-
                     <td className="px-4 py-3 text-xs">
                       {p.razorpayPaymentId || "-"}
                     </td>
-
                     <td className="px-4 py-3 text-sm">
-                      <button
-                        onClick={() => {
-                          setSelectedPayment(p);
-                          setShowInvoice(true);
-                        }}
-                        className="text-blue-600 hover:underline"
-                      >
-                        View Invoice
-                      </button>
+                      {p.status === "SUCCESS" ? (
+                        <button
+                          onClick={() => {
+                            setSelectedPayment(p);
+                            setShowInvoice(true);
+                          }}
+                          className="text-blue-600 hover:underline"
+                        >
+                          View Invoice
+                        </button>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -293,23 +227,33 @@ export default function Payments() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
+            <div className="flex justify-center items-center gap-2 mt-6">
               <button
                 disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                onClick={() => setPage((p) => p - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-40"
               >
                 Prev
               </button>
 
-              <span className="text-sm">
-                Page {page} of {totalPages}
-              </span>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 border rounded ${
+                    page === i + 1
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
 
               <button
                 disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-40"
               >
                 Next
               </button>

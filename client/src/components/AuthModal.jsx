@@ -64,9 +64,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }) {
   );
 }
 
-/* =======================
-   LOGIN FORM (CONNECTED)
-======================= */
+// LOGIN FORM (CONNECTED)
 function LoginForm({ onClose }) {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -120,9 +118,7 @@ function LoginForm({ onClose }) {
   );
 }
 
-/* =========================
-   REGISTER FORM (CONNECTED)
-========================= */
+//  REGISTER FORM 
 function RegisterForm({ onClose }) {
   const { register } = useAuth();
   const navigate = useNavigate();

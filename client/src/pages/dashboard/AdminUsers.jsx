@@ -1,0 +1,92 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axios";
+import { useAuth } from "../../context/AuthContext";
+
+export default function AdminUsers() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.role === "ADMIN") {
+      fetchUsers();
+    }
+  }, [user]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get("/admin/users");
+      setUsers(res.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (user?.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen pt-32 text-center text-red-600">
+        Access Denied
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <div className="min-h-screen pt-32 text-center">Loading...</div>;
+  }
+
+  return (
+    <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
+      <button
+        onClick={() => navigate("/dashboard/admin")}
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
+      >
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
+      </button>
+
+      <h1 className="text-2xl font-bold mb-6">User Management</h1>
+
+      <div className="overflow-x-auto bg-white rounded-xl shadow">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Email</th>
+              <th className="px-4 py-3 text-left">Role</th>
+              <th className="px-4 py-3 text-left">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {users.map((u) => (
+              <tr key={u._id} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-3">{u.name}</td>
+                <td className="px-4 py-3">{u.email}</td>
+                <td className="px-4 py-3 font-medium">{u.role}</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => navigate(`/dashboard/admin/users/${u._id}`)}
+                    className="text-blue-600 font-medium hover:underline"
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {users.length === 0 && (
+              <tr>
+                <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
+                  No users found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

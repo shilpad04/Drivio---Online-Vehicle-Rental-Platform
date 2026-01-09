@@ -6,10 +6,13 @@ import AuthModal from "./AuthModal";
 export default function VehicleCard({ vehicle }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [showAuth, setShowAuth] = useState(false);
 
   const showStatus = user && user.role !== "RENTER";
+
+  const canShowBookNow =
+    vehicle.status === "approved" &&
+    (!user || user.role === "RENTER");
 
   const handleCardClick = () => {
     navigate(`/vehicles/${vehicle._id}`);
@@ -23,9 +26,7 @@ export default function VehicleCard({ vehicle }) {
       return;
     }
 
-    if (user.role === "RENTER") {
-      navigate(`/vehicles/${vehicle._id}`);
-    }
+    navigate(`/vehicles/${vehicle._id}`);
   };
 
   return (
@@ -73,7 +74,7 @@ export default function VehicleCard({ vehicle }) {
           ₹{vehicle.pricePerDay} / day
         </p>
 
-        {vehicle.status === "approved" && (
+        {canShowBookNow && (
           <button
             onClick={handleBookNow}
             className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"

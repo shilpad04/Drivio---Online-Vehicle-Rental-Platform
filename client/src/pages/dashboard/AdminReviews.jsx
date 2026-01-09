@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { paginate } from "../../utils/pagination";
+import ConfirmModal from "../../components/ConfirmModal";
+
+const ITEMS_PER_PAGE = 6;
 
 export default function AdminReviews() {
   const [reviews, setReviews] = useState([]);
@@ -10,6 +14,12 @@ export default function AdminReviews() {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [visibilityFilter, setVisibilityFilter] = useState("all");
   const [search, setSearch] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -27,6 +37,7 @@ export default function AdminReviews() {
       const res = await api.get("/reviews/admin");
       setReviews(res.data || []);
       setFilteredReviews(res.data || []);
+      setCurrentPage(1);
     } catch {
       console.error("Failed to load reviews");
     } finally {
@@ -44,19 +55,25 @@ export default function AdminReviews() {
     fetchAllReviews();
   };
 
-  const deleteReview = async (id) => {
-    if (!window.confirm("Delete this review permanently?")) return;
-    await api.delete(`/reviews/${id}`);
-    fetchAllReviews();
+  const deleteReview = async () => {
+    if (!reviewToDelete) return;
+
+    try {
+      setDeleting(true);
+      await api.delete(`/reviews/${reviewToDelete}`);
+      setConfirmOpen(false);
+      setReviewToDelete(null);
+      fetchAllReviews();
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const applyFilters = () => {
     let data = [...reviews];
 
     if (ratingFilter !== "all") {
-      data = data.filter(
-        (r) => Number(r.rating) === Number(ratingFilter)
-      );
+      data = data.filter((r) => Number(r.rating) === Number(ratingFilter));
     }
 
     if (visibilityFilter !== "all") {
@@ -88,7 +105,14 @@ export default function AdminReviews() {
     }
 
     setFilteredReviews(data);
+    setCurrentPage(1);
   };
+
+  const { totalPages, paginatedItems: paginatedReviews } = paginate(
+    filteredReviews,
+    currentPage,
+    ITEMS_PER_PAGE
+  );
 
   if (loading) {
     return <div className="min-h-screen pt-32 text-center">Loading...</div>;
@@ -98,16 +122,14 @@ export default function AdminReviews() {
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
       <button
         onClick={() => navigate("/dashboard/admin")}
-        className="mb-6 text-sm text-blue-600 hover:underline"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
       >
-        ← Back
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">
-        All Ratings & Reviews
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">All Ratings & Reviews</h1>
 
-      {/* FILTERS */}
       <div className="bg-white rounded-xl shadow p-4 mb-8 grid gap-4 grid-cols-1 md:grid-cols-4">
         <input
           type="text"
@@ -141,41 +163,76 @@ export default function AdminReviews() {
         </select>
       </div>
 
-      {filteredReviews.length === 0 ? (
-        <p className="text-gray-600 text-center">
-          No reviews match the filters.
-        </p>
-      ) : (
-        <div className="space-y-6">
-          {filteredReviews.map((review) => (
-            <ReviewCard
-              key={review._id}
-              review={review}
-              onHide={hideReview}
-              onUnhide={unhideReview}
-              onDelete={deleteReview}
-            />
+      <div className="space-y-6">
+        {paginatedReviews.map((review) => (
+          <ReviewCard
+            key={review._id}
+            review={review}
+            onHide={hideReview}
+            onUnhide={unhideReview}
+            onAskDelete={(id) => {
+              setReviewToDelete(id);
+              setConfirmOpen(true);
+            }}
+          />
+        ))}
+      </div>
+
+      <ConfirmModal
+        open={confirmOpen}
+        title="Delete Review"
+        description="This action is permanent and cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        danger
+        loading={deleting}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setReviewToDelete(null);
+        }}
+        onConfirm={deleteReview}
+      />
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-10">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+          >
+            Prev
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i + 1)}
+              className={`px-3 py-1 text-sm border rounded ${
+                currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-gray-100"
+              }`}
+            >
+              {i + 1}
+            </button>
           ))}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-/* =====================================
-   REVIEW CARD (ADMIN)
-===================================== */
-
-function ReviewCard({ review, onHide, onUnhide, onDelete }) {
-  const {
-    _id,
-    rating,
-    comment,
-    createdAt,
-    vehicleId,
-    renterId,
-    isHidden,
-  } = review;
+function ReviewCard({ review, onHide, onUnhide, onAskDelete }) {
+  const navigate = useNavigate();
+  const { _id, rating, comment, createdAt, vehicleId, isHidden } = review;
 
   return (
     <div
@@ -183,32 +240,39 @@ function ReviewCard({ review, onHide, onUnhide, onDelete }) {
         isHidden ? "bg-gray-100 opacity-70" : "bg-white"
       }`}
     >
-      <div>
-        <h2 className="font-semibold text-lg">
-          {vehicleId?.make} {vehicleId?.model}
-        </h2>
-        <p className="text-sm text-gray-600">
-          {vehicleId?.location} • {vehicleId?.category}
-        </p>
-      </div>
+      <div className="flex gap-4">
+        <div className="w-24 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+          {vehicleId?.images?.[0] ? (
+            <img
+              src={vehicleId.images[0]}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400 text-xs">
+              No Image
+            </div>
+          )}
+        </div>
 
-      {vehicleId?.ownerId && (
-        <div className="text-sm">
-          <p className="font-medium text-gray-700">Owner</p>
-          <p>{vehicleId.ownerId.name}</p>
-          <p className="text-gray-500">
-            {vehicleId.ownerId.email}
+        <div className="flex-1">
+          <h2 className="font-semibold text-lg">
+            {vehicleId?.make} {vehicleId?.model}
+          </h2>
+          <p className="text-sm text-gray-600">
+            {vehicleId?.location} • {vehicleId?.category}
           </p>
-        </div>
-      )}
 
-      {renterId && (
-        <div className="text-sm">
-          <p className="font-medium text-gray-700">Renter</p>
-          <p>{renterId.name}</p>
-          <p className="text-gray-500">{renterId.email}</p>
+          {vehicleId?._id && (
+            <button
+              onClick={() => navigate(`/vehicles/${vehicleId._id}`)}
+              className="text-sm text-blue-600 hover:underline mt-1"
+            >
+              View vehicle details →
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       <div className="border-t pt-4">
         <span className="text-yellow-500 font-semibold">
@@ -242,7 +306,7 @@ function ReviewCard({ review, onHide, onUnhide, onDelete }) {
         )}
 
         <button
-          onClick={() => onDelete(_id)}
+          onClick={() => onAskDelete(_id)}
           className="px-3 py-1 text-sm bg-red-600 text-white rounded"
         >
           Delete

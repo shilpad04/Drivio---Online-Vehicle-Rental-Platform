@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import Reviews from "../components/Reviews";
+import { paginate } from "../utils/pagination";
+
+const ITEMS_PER_PAGE = 5;
 
 export default function RentalHistory() {
   const navigate = useNavigate();
@@ -9,6 +12,8 @@ export default function RentalHistory() {
   const [rentals, setRentals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchRentalHistory();
@@ -25,6 +30,7 @@ export default function RentalHistory() {
       );
 
       setRentals(history);
+      setCurrentPage(1);
     } catch {
       setError("Failed to load rental history");
     } finally {
@@ -32,9 +38,12 @@ export default function RentalHistory() {
     }
   };
 
-  // ===============================
-  // CSV EXPORT — RENTER HISTORY
-  // ===============================
+  const { totalPages, paginatedItems: paginatedRentals } = paginate(
+    rentals,
+    currentPage,
+    ITEMS_PER_PAGE
+  );
+
   const exportCSV = () => {
     if (!rentals.length) return;
 
@@ -77,20 +86,18 @@ export default function RentalHistory() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">
-        {error}
-      </div>
+      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
     );
   }
 
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
-      {/* BACK BUTTON — MATCHES VehicleBookings */}
       <button
         onClick={() => navigate("/dashboard/renter")}
-        className="mb-6 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
       >
-        ← Back
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
       </button>
 
       <div className="flex justify-between items-center mb-8">
@@ -111,21 +118,66 @@ export default function RentalHistory() {
           No rental history available.
         </p>
       ) : (
-        <div className="space-y-6">
-          {rentals.map((rental) => (
-            <RentalCard key={rental._id} rental={rental} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-6">
+            {paginatedRentals.map((rental) => (
+              <RentalCard key={rental._id} rental={rental} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-10">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+              >
+                Prev
+              </button>
+
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 text-sm border rounded ${
+                    currentPage === i + 1
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 function RentalCard({ rental }) {
-  const { vehicle, startDate, endDate, status, _id } = rental;
+  const navigate = useNavigate();
+
+  const { vehicle, startDate, endDate, status, _id, updatedAt } = rental;
+  const isCancelled = status === "CANCELLED";
 
   return (
-    <div className="bg-white rounded-xl shadow p-6 space-y-4">
+    <div
+      className={`rounded-xl shadow p-6 space-y-4 ${
+        isCancelled
+          ? "bg-red-50 border border-red-100"
+          : "bg-white"
+      }`}
+    >
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-56 h-40 bg-gray-100 rounded overflow-hidden">
           {vehicle?.images?.[0] ? (
@@ -156,13 +208,33 @@ function RentalCard({ rental }) {
         </div>
       </div>
 
+      {isCancelled && (
+        <div className="pt-4 border-t border-red-200 space-y-2">
+          <p className="text-sm text-red-700 font-medium">
+            ❌ Booking was cancelled
+          </p>
+
+          {updatedAt && (
+            <p className="text-xs text-red-600">
+              Cancelled on: {formatDate(updatedAt)}
+            </p>
+          )}
+
+          {vehicle?._id && (
+            <button
+              onClick={() => navigate(`/vehicles/${vehicle._id}`)}
+              className="flex items-center gap-2 text-sm text-blue-600 hover:underline mt-2"
+            >
+              <i className="fa-solid fa-rotate-right"></i>
+              Book this vehicle again
+            </button>
+          )}
+        </div>
+      )}
+
       {status === "COMPLETED" && (
         <div className="pt-4 border-t">
-          <Reviews
-            vehicleId={vehicle._id}
-            bookingId={_id}
-            singleReview
-          />
+          <Reviews vehicleId={vehicle._id} bookingId={_id} singleReview />
         </div>
       )}
     </div>

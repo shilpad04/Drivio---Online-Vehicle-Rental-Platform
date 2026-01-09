@@ -8,8 +8,7 @@ const {
 } = require("../controllers/adminUserController");
 
 
-//ADMIN only routes
-
+//ADMIN routes
 router.get("/users", auth, getAllUsers);
 router.get("/users/:id", auth, getUserDetails);
 

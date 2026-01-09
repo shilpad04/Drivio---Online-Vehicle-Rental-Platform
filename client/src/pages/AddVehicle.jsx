@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addVehicle } from "../api/vehicleApi";
 import ImageUpload from "../components/ImageUpload";
+import ConfirmModal from "../components/ConfirmModal";
 
 const inputClass =
   "w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
@@ -9,6 +10,8 @@ const inputClass =
 export default function AddVehicle() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -25,7 +28,7 @@ export default function AddVehicle() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (images.length === 0) {
@@ -33,6 +36,10 @@ export default function AddVehicle() {
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     try {
       setLoading(true);
 
@@ -44,24 +51,31 @@ export default function AddVehicle() {
       });
 
       alert("Vehicle submitted for admin approval");
-
-      // Redirect owner back to dashboard
       navigate("/dashboard/owner");
     } catch (error) {
       console.error("Add vehicle failed:", error);
       alert("Failed to submit vehicle. Please try again.");
     } finally {
       setLoading(false);
+      setShowConfirm(false);
     }
   };
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
+      {/* BACK */}
+      <button
+        onClick={() => navigate("/dashboard/owner")}
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
+      >
+        <i className="fa-solid fa-arrow-left"></i>
+        Back
+      </button>
+
       <h1 className="text-3xl font-bold mb-6">Add New Vehicle</h1>
 
       <div className="bg-white shadow rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-8">
-
           {/* Vehicle Information */}
           <section>
             <h2 className="text-lg font-semibold mb-4">
@@ -69,45 +83,30 @@ export default function AddVehicle() {
             </h2>
 
             <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Make
-                </label>
-                <input
-                  name="make"
-                  placeholder="e.g. Hyundai"
-                  required
-                  className={inputClass}
-                  onChange={handleChange}
-                />
-              </div>
+              <input
+                name="make"
+                placeholder="e.g. Hyundai"
+                required
+                className={inputClass}
+                onChange={handleChange}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Model
-                </label>
-                <input
-                  name="model"
-                  placeholder="e.g. Creta"
-                  required
-                  className={inputClass}
-                  onChange={handleChange}
-                />
-              </div>
+              <input
+                name="model"
+                placeholder="e.g. Creta"
+                required
+                className={inputClass}
+                onChange={handleChange}
+              />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Year
-                </label>
-                <input
-                  type="number"
-                  name="year"
-                  placeholder="e.g. 2022"
-                  required
-                  className={inputClass}
-                  onChange={handleChange}
-                />
-              </div>
+              <input
+                type="number"
+                name="year"
+                placeholder="e.g. 2022"
+                required
+                className={inputClass}
+                onChange={handleChange}
+              />
             </div>
           </section>
 
@@ -205,12 +204,22 @@ export default function AddVehicle() {
                   : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              {loading ? "Submitting..." : "Submit Vehicle"}
+              Submit Vehicle
             </button>
           </div>
-
         </form>
       </div>
+      
+      <ConfirmModal
+        open={showConfirm}
+        title="Submit vehicle for approval?"
+        description="Once submitted, this vehicle will be reviewed by the admin before it becomes visible to renters."
+        confirmText="Yes, submit"
+        cancelText="Cancel"
+        loading={loading}
+        onConfirm={handleConfirmSubmit}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

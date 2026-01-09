@@ -103,10 +103,6 @@ export default function OwnerDashboard() {
   );
 }
 
-/* ===========================
-   REUSABLE COMPONENTS
-=========================== */
-
 function Tile({ title, value, color, icon, onClick }) {
   return (
     <div

@@ -1,10 +1,9 @@
 const User = require("../models/User");
 
- // ADMIN: Get all users (read-only)
+ // ADMIN: Get all users
  // Search + Role filter
 exports.getAllUsers = async (req, res) => {
   try {
-    // 🔒 Role check
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -16,8 +15,7 @@ exports.getAllUsers = async (req, res) => {
     if (role) {
       query.role = role;
     }
-
-    // Search by name or email
+    
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },

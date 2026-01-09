@@ -1,11 +1,6 @@
 const Vehicle = require("../models/Vehicle");
 
-/**
- * =====================================
- * PUBLIC / RENTER
- * Get approved vehicles with filters
- * =====================================
- */
+// PUBLIC / RENTER - Get approved vehicles with filters
 exports.getApprovedVehicles = async (req, res) => {
   try {
     const { search, vehicleType, location, category, minPrice, maxPrice } =
@@ -24,7 +19,11 @@ exports.getApprovedVehicles = async (req, res) => {
     }
 
     if (vehicleType) query.vehicleType = vehicleType;
-    if (location) query.location = location;
+
+    if (location) {
+      query.location = new RegExp(location, "i");
+    }
+
     if (category) query.category = category;
 
     if (minPrice || maxPrice) {
@@ -42,12 +41,7 @@ exports.getApprovedVehicles = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * PUBLIC / RENTER
- * Get single approved vehicle by ID
- * =====================================
- */
+// PUBLIC / RENTER - Get single approved vehicle by ID
 exports.getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findOne({
@@ -66,12 +60,7 @@ exports.getVehicleById = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * OWNER
- * Add vehicle (pending by default)
- * =====================================
- */
+// OWNER - Add vehicle (pending by default)
 exports.addVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {
@@ -90,12 +79,7 @@ exports.addVehicle = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * OWNER
- * Get my vehicles (all statuses)
- * =====================================
- */
+// OWNER - Get my vehicles (all statuses)
 exports.getMyVehicles = async (req, res) => {
   try {
     const vehicles = await Vehicle.find({ ownerId: req.user.id }).sort({
@@ -108,15 +92,9 @@ exports.getMyVehicles = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN
- * Get ALL vehicles (approved | pending | rejected)
- * =====================================
- */
+// ADMIN - Get ALL vehicles (approved | pending | rejected)
 exports.getAllVehiclesForAdmin = async (req, res) => {
   try {
-    // 🔒 Strict role enforcement
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -125,11 +103,11 @@ exports.getAllVehiclesForAdmin = async (req, res) => {
 
     const query = {};
     if (status) {
-      query.status = status; // approved | pending | rejected
+      query.status = status;
     }
 
     const vehicles = await Vehicle.find(query)
-      .populate("ownerId", "name email role") // ✅ FIXED
+      .populate("ownerId", "name email role")
       .sort({ createdAt: -1 });
 
     res.status(200).json(vehicles);
@@ -139,12 +117,7 @@ exports.getAllVehiclesForAdmin = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN
- * Approve vehicle
- * =====================================
- */
+// ADMIN - Approve vehicle
 exports.approveVehicle = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -163,12 +136,7 @@ exports.approveVehicle = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN
- * Reject vehicle
- * =====================================
- */
+// ADMIN - Reject vehicle
 exports.rejectVehicle = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {

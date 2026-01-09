@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getVehicleReviews, addReview } from "../api/reviewApi";
 import { useAuth } from "../context/AuthContext";
 
-export default function Reviews({ vehicleId, bookingId }) {
+export default function Reviews({ vehicleId, bookingId, singleReview }) {
   const { user } = useAuth();
 
   const [reviews, setReviews] = useState([]);
@@ -12,7 +12,6 @@ export default function Reviews({ vehicleId, bookingId }) {
 
   const [showForm, setShowForm] = useState(false);
 
-  /* ================= FETCH REVIEWS ================= */
   const fetchReviews = async () => {
     try {
       if (vehicleId) {
@@ -28,12 +27,21 @@ export default function Reviews({ vehicleId, bookingId }) {
     fetchReviews();
   }, [vehicleId]);
 
-  /* ================= REVIEW EXISTS CHECK ================= */
+  const visibleReviews = reviews.filter((r) => !r.isHidden);
+  const totalReviews = visibleReviews.length;
+
+  const averageRating =
+    totalReviews > 0
+      ? (
+          visibleReviews.reduce((sum, r) => sum + r.rating, 0) /
+          totalReviews
+        ).toFixed(1)
+      : 0;
+
   const existingReview = bookingId
     ? reviews.find((r) => r.bookingId === bookingId)
     : null;
 
-  /* ================= SUBMIT REVIEW ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -56,7 +64,6 @@ export default function Reviews({ vehicleId, bookingId }) {
     }
   };
 
-  /* ================= STAR UI ================= */
   const Star = ({ filled, onClick }) => (
     <span
       onClick={onClick}
@@ -68,36 +75,56 @@ export default function Reviews({ vehicleId, bookingId }) {
     </span>
   );
 
-  /* ================= UI ================= */
   return (
     <section className="mt-6">
-      <h3 className="text-lg font-semibold mb-3">Reviews</h3>
+      <h3 className="text-lg font-semibold mb-1">Reviews</h3>
 
-      {/* EXISTING REVIEW (AUTO DISPLAY) */}
-      {existingReview && (
-        <div className="border rounded-lg p-4 bg-white">
-          <div className="flex justify-between mb-1">
-            <span className="font-medium">
-              {existingReview.renterId?.name || "You"}
-            </span>
-            <span className="text-yellow-500">
-              ⭐ {existingReview.rating}/5
-            </span>
-          </div>
-
-          {existingReview.comment && (
-            <p className="text-sm text-gray-600">
-              {existingReview.comment}
-            </p>
-          )}
-
-          <p className="text-xs text-gray-400 mt-1">
-            {new Date(existingReview.createdAt).toLocaleDateString()}
-          </p>
+      {totalReviews > 0 && (
+        <div className="flex items-center gap-2 mb-3 text-sm text-gray-700">
+          <span className="text-yellow-500 font-semibold">
+            ⭐ {averageRating}
+          </span>
+          <span>
+            ({totalReviews} review{totalReviews > 1 ? "s" : ""})
+          </span>
         </div>
       )}
 
-      {/* ADD REVIEW — DROPDOWN CTA */}
+      {totalReviews === 0 && (
+        <p className="text-sm text-gray-500 mb-3">
+          No reviews yet. Be the first to review this vehicle.
+        </p>
+      )}
+
+      {existingReview && (
+        <>
+          <div className="text-xs text-green-600 font-medium mb-2">
+            ✔ You already reviewed this rental
+          </div>
+
+          <div className="border rounded-lg p-4 bg-white">
+            <div className="flex justify-between mb-1">
+              <span className="font-medium">
+                {existingReview.renterId?.name || "You"}
+              </span>
+              <span className="text-yellow-500">
+                ⭐ {existingReview.rating}/5
+              </span>
+            </div>
+
+            {existingReview.comment && (
+              <p className="text-sm text-gray-600">
+                {existingReview.comment}
+              </p>
+            )}
+
+            <p className="text-xs text-gray-400 mt-1">
+              {new Date(existingReview.createdAt).toLocaleDateString()}
+            </p>
+          </div>
+        </>
+      )}
+
       {!existingReview &&
         user?.role === "RENTER" &&
         bookingId && (
@@ -159,11 +186,10 @@ export default function Reviews({ vehicleId, bookingId }) {
           </>
         )}
 
-      {/* OTHER USERS' REVIEWS */}
-      {reviews.length > 0 && (
+      {!singleReview && reviews.length > 0 && (
         <div className="mt-6 space-y-3">
           {reviews
-            .filter((r) => r.bookingId !== bookingId)
+            .filter((r) => r.bookingId !== bookingId && !r.isHidden)
             .map((r) => (
               <div
                 key={r._id}

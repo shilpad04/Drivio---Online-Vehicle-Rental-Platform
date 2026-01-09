@@ -2,45 +2,23 @@ import { useEffect, useState } from "react";
 import { getApprovedVehicles } from "../api/vehicleApi";
 import VehicleCard from "../components/VehicleCard";
 import AuthModal from "../components/AuthModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export default function Landing({ searchQuery, setSearchQuery }) {
+export default function Landing() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
-
-  const [filters, setFilters] = useState({
-    vehicleType: "",
-    category: "",
-    minPrice: "",
-    maxPrice: "",
-  });
+  const [showOwnerOnly, setShowOwnerOnly] = useState(false);
 
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const params = {};
-
-        if (searchQuery.trim()) {
-          const parts = searchQuery.trim().split(" ");
-          if (parts.length === 1) {
-            params.search = searchQuery;
-          } else {
-            params.search = parts.slice(0, -1).join(" ");
-            params.location = parts[parts.length - 1];
-          }
-        }
-
-        if (filters.vehicleType) params.vehicleType = filters.vehicleType;
-        if (filters.category) params.category = filters.category;
-        if (filters.minPrice) params.minPrice = filters.minPrice;
-        if (filters.maxPrice) params.maxPrice = filters.maxPrice;
-
-        const data = await getApprovedVehicles(params);
+        const data = await getApprovedVehicles({});
         setVehicles(data);
       } catch {
         setVehicles([]);
@@ -50,11 +28,16 @@ export default function Landing({ searchQuery, setSearchQuery }) {
     };
 
     fetchVehicles();
-  }, [searchQuery, filters]);
+  }, []);
 
   const handleListVehicle = () => {
     if (!user) {
       setShowAuth(true);
+      return;
+    }
+
+    if (user.role !== "owner") {
+      setShowOwnerOnly(true);
       return;
     }
 
@@ -63,6 +46,7 @@ export default function Landing({ searchQuery, setSearchQuery }) {
 
   return (
     <>
+      {/* HERO */}
       <section
         className="pt-40 pb-32 bg-cover bg-center"
         style={{
@@ -79,28 +63,14 @@ export default function Landing({ searchQuery, setSearchQuery }) {
             <p className="mt-4 text-gray-600">
               Your next ride is just a few clicks away
             </p>
-
-            <div className="mt-6 flex items-center bg-white rounded-xl shadow overflow-hidden">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search vehicle or location"
-                className="flex-1 px-4 py-3 outline-none"
-              />
-              <button className="px-5 py-3 bg-blue-600 text-white">
-                <i className="fa-solid fa-magnifying-glass"></i>
-              </button>
-            </div>
           </div>
         </div>
       </section>
 
+      {/* VEHICLES */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-10">
-            Popular Vehicles
-          </h2>
+          <h2 className="text-3xl font-bold mb-10">Popular Vehicles</h2>
 
           {loading && <p className="text-gray-500">Loading vehicles...</p>}
 
@@ -136,11 +106,23 @@ export default function Landing({ searchQuery, setSearchQuery }) {
         </div>
       </section>
 
+      {/* AUTH MODAL */}
       <AuthModal
         key={showAuth ? "register" : "closed"}
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         defaultTab="register"
+      />
+
+      {/* OWNER RESTRICTION MODAL */}
+      <ConfirmModal
+        open={showOwnerOnly}
+        title="Access Restricted"
+        description="Only owners can list vehicles."
+        confirmText="OK"
+        cancelText="Close"
+        onConfirm={() => setShowOwnerOnly(false)}
+        onCancel={() => setShowOwnerOnly(false)}
       />
     </>
   );

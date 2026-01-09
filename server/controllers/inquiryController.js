@@ -2,11 +2,9 @@ const Inquiry = require("../models/Inquiry");
 const User = require("../models/User");
 const { sendInquiryReplyEmail } = require("../services/emailService");
 
-/**
- * =====================================
- * USER – Submit inquiry (RENTER / OWNER ONLY)
- * =====================================
- */
+
+//USER – Submit inquiry (RENTER / OWNER ONLY)
+
 exports.createInquiry = async (req, res) => {
   try {
     if (!["RENTER", "OWNER"].includes(req.user.role)) {
@@ -38,11 +36,8 @@ exports.createInquiry = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * USER – View own inquiries
- * =====================================
- */
+ // USER – View own inquiries
+
 exports.getMyInquiries = async (req, res) => {
   try {
     const inquiries = await Inquiry.find({ user: req.user.id }).sort({
@@ -55,11 +50,9 @@ exports.getMyInquiries = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN – View all inquiries
- * =====================================
- */
+
+// ADMIN – View all inquiries
+
 exports.getAllInquiriesAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -76,11 +69,9 @@ exports.getAllInquiriesAdmin = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN – Reply to inquiry
- * =====================================
- */
+
+// ADMIN – Reply to inquiry
+
 exports.replyToInquiry = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -122,11 +113,9 @@ exports.replyToInquiry = async (req, res) => {
   }
 };
 
-/**
- * =====================================
- * ADMIN – Close inquiry
- * =====================================
- */
+
+ // ADMIN – Close inquiry
+
 exports.closeInquiry = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
