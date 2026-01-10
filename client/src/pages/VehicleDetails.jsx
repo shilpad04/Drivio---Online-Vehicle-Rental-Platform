@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import Reviews from "../components/Reviews";
 import AuthModal from "../components/AuthModal";
 import ConfirmModal from "../components/ConfirmModal";
+import StatusBadge from "../components/StatusBadge";
 
 export default function VehicleDetails() {
   const { id } = useParams();
@@ -165,9 +166,7 @@ export default function VehicleDetails() {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
 
   const prevImage = () =>
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? images.length - 1 : prev - 1
-    );
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
 
   return (
     <>
@@ -181,17 +180,10 @@ export default function VehicleDetails() {
 
         {/* STATUS */}
         <div className="mb-4">
-          <span
-            className={`px-3 py-1 text-sm rounded-full font-medium ${
-              vehicle.status === "approved"
-                ? "bg-green-100 text-green-700"
-                : vehicle.status === "rejected"
-                ? "bg-red-100 text-red-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            Status: {vehicle.status}
-          </span>
+          <div className="mb-4">
+            <span className="text-sm font-medium mr-2">Status:</span>
+            <StatusBadge status={vehicle.status} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -244,17 +236,14 @@ export default function VehicleDetails() {
                   {vehicle.vehicleType}
                 </p>
                 <p>
-                  <span className="font-medium">Year:</span>{" "}
-                  {vehicle.year}
+                  <span className="font-medium">Year:</span> {vehicle.year}
                 </p>
               </div>
             </div>
 
             {vehicle.description && (
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">
-                  Description
-                </h3>
+                <h3 className="text-lg font-semibold mb-2">Description</h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
                   {vehicle.description}
                 </p>
@@ -319,15 +308,11 @@ export default function VehicleDetails() {
                   disabled={checkingAvailability}
                   className="w-full px-4 py-2 rounded bg-gray-900 text-white"
                 >
-                  {checkingAvailability
-                    ? "Checking..."
-                    : "Check Availability"}
+                  {checkingAvailability ? "Checking..." : "Check Availability"}
                 </button>
 
                 {availabilityError && (
-                  <p className="text-red-600 text-sm">
-                    {availabilityError}
-                  </p>
+                  <p className="text-red-600 text-sm">{availabilityError}</p>
                 )}
 
                 {isAvailable && (
@@ -357,19 +342,11 @@ export default function VehicleDetails() {
       {/* CONFIRM MODAL */}
       <ConfirmModal
         open={confirmOpen}
-        title={
-          confirmType === "approve"
-            ? "Approve Vehicle"
-            : "Reject Vehicle"
-        }
+        title={confirmType === "approve" ? "Approve Vehicle" : "Reject Vehicle"}
         confirmText={confirmType === "approve" ? "Approve" : "Reject"}
         loading={actionLoading}
         onCancel={() => setConfirmOpen(false)}
-        onConfirm={
-          confirmType === "approve"
-            ? approveVehicle
-            : rejectVehicle
-        }
+        onConfirm={confirmType === "approve" ? approveVehicle : rejectVehicle}
       />
 
       <AuthModal

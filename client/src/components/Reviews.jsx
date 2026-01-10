@@ -90,11 +90,18 @@ export default function Reviews({ vehicleId, bookingId, singleReview }) {
         </div>
       )}
 
-      {totalReviews === 0 && (
+      {totalReviews === 0 && user?.role === "RENTER" && (
         <p className="text-sm text-gray-500 mb-3">
           No reviews yet. Be the first to review this vehicle.
         </p>
       )}
+
+      {totalReviews === 0 &&
+        (user?.role === "ADMIN" || user?.role === "OWNER") && (
+          <p className="text-sm text-gray-500 mb-3">
+            No reviews yet.
+          </p>
+        )}
 
       {existingReview && (
         <>

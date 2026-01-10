@@ -4,7 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import ConfirmModal from "../components/ConfirmModal";
 import { paginate } from "../utils/pagination";
-
+import { exportCSV } from "../utils/exportCSV";
+import StatusBadge from "../components/StatusBadge";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -70,9 +71,7 @@ export default function VehicleBookings() {
     if (role === "ADMIN") navigate("/dashboard/admin");
   };
 
-  const exportCSV = () => {
-    if (!bookings.length) return;
-
+  const exportCSVFile = () => {
     const headers = ["Vehicle", "Start Date", "End Date", "Status"];
 
     if (role === "OWNER" || role === "ADMIN") {
@@ -94,15 +93,6 @@ export default function VehicleBookings() {
       return row;
     });
 
-    const csv =
-      headers.join(",") +
-      "\n" +
-      rows
-        .map((r) =>
-          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
-        )
-        .join("\n");
-
     const fileName =
       role === "ADMIN"
         ? "bookings-admin.csv"
@@ -110,15 +100,7 @@ export default function VehicleBookings() {
         ? "bookings-owner.csv"
         : "bookings-renter.csv";
 
-    const csvData = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-
-    const link = document.createElement("a");
-    link.setAttribute("href", csvData);
-    link.setAttribute("download", fileName);
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportCSV({ headers, rows, fileName });
   };
 
   if (loading) {
@@ -127,7 +109,9 @@ export default function VehicleBookings() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
+      <div className="min-h-screen pt-32 text-center text-red-600">
+        {error}
+      </div>
     );
   }
 
@@ -156,9 +140,7 @@ export default function VehicleBookings() {
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                       hover:border-gray-400 transition"
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm"
           >
             <option value="ALL">All</option>
             <option value="ACTIVE">Active</option>
@@ -169,7 +151,7 @@ export default function VehicleBookings() {
           {bookings.length > 0 && (
             <button
               type="button"
-              onClick={exportCSV}
+              onClick={exportCSVFile}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
             >
               Export CSV
@@ -198,8 +180,7 @@ export default function VehicleBookings() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white
-                           hover:bg-gray-100 transition disabled:opacity-40"
+                className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
               >
                 Prev
               </button>
@@ -208,10 +189,10 @@ export default function VehicleBookings() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1.5 text-sm border rounded-lg transition ${
+                  className={`px-3 py-1.5 text-sm border rounded-lg ${
                     currentPage === i + 1
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white border-gray-300 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white hover:bg-gray-100"
                   }`}
                 >
                   {i + 1}
@@ -221,8 +202,7 @@ export default function VehicleBookings() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white
-                           hover:bg-gray-100 transition disabled:opacity-40"
+                className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
               >
                 Next
               </button>
@@ -234,7 +214,6 @@ export default function VehicleBookings() {
   );
 }
 
-/*  BookingCard */
 
 function BookingCard({ booking, role, refresh }) {
   const { vehicle, renter, startDate, endDate, status, _id } = booking;
@@ -272,27 +251,23 @@ function BookingCard({ booking, role, refresh }) {
   };
 
   return (
- <div
-  onClick={() => setOpen(!open)}
-  className={`bg-white rounded-xl shadow p-0 cursor-pointer relative
-              ${open ? "z-20" : "z-0"}`}
->
-
+    <div
+      onClick={() => setOpen(!open)}
+      className="bg-white rounded-xl shadow cursor-pointer"
+    >
       <div className="p-5 flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-60">
-          <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden">
-            {vehicle?.images?.[0] ? (
-              <img
-                src={vehicle.images[0]}
-                className="w-full h-full object-cover"
-                alt=""
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
-          </div>
+        <div className="w-full md:w-60 aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden">
+          {vehicle?.images?.[0] ? (
+            <img
+              src={vehicle.images[0]}
+              className="w-full h-full object-cover"
+              alt=""
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-gray-400">
+              No Image
+            </div>
+          )}
         </div>
 
         <div className="flex-1">
@@ -330,46 +305,35 @@ function BookingCard({ booking, role, refresh }) {
 
           {(role === "OWNER" || role === "ADMIN") && renter && (
             <div className="pt-3 border-t">
-              <p className="font-medium text-gray-700 mb-1">Renter Details</p>
+              <p className="font-medium mb-1">Renter Details</p>
               <p>Name: {renter.name}</p>
               <p className="break-all">Email: {renter.email}</p>
             </div>
           )}
 
-          <div className="pt-4 border-t">
-            {role === "RENTER" && status === "ACTIVE" && (
-              <>
-                <div className="flex gap-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowModifyModal(true);
-                    }}
-                    className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-                  >
-                    Modify Booking
-                  </button>
+          {role === "RENTER" && status === "ACTIVE" && (
+            <div className="pt-4 border-t flex gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModifyModal(true);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              >
+                Modify Booking
+              </button>
 
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowCancelModal(true);
-                    }}
-                    className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
-                  >
-                    Cancel Booking
-                  </button>
-                </div>
-
-                <p className="mt-2 text-xs text-gray-500 leading-relaxed">
-                  We know plans can change! Since the vehicle may already have
-                  other bookings, confirmed reservations can’t be edited.
-                  Cancelling and rebooking helps make sure your new dates are
-                  available.
-                </p>
-              </>
-            )}
-          </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCancelModal(true);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+              >
+                Cancel Booking
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -397,21 +361,8 @@ function BookingCard({ booking, role, refresh }) {
   );
 }
 
-function StatusBadge({ status }) {
-  const map = {
-    ACTIVE: "bg-blue-100 text-blue-700",
-    CANCELLED: "bg-red-100 text-red-700",
-    COMPLETED: "bg-green-100 text-green-700",
-  };
+<StatusBadge status={status} />
 
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-xs font-semibold ${map[status]}`}
-    >
-      {status}
-    </span>
-  );
-}
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString("en-IN", {

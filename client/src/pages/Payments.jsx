@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { getAllPaymentsAdmin, getMyPayments } from "../api/payment";
 import InvoiceModal from "../components/InvoiceModal";
 import { paginate } from "../utils/pagination";
+import { exportCSV } from "../utils/exportCSV";
+import StatusBadge from "../components/StatusBadge";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -30,9 +32,7 @@ export default function Payments() {
       setError("");
 
       const res =
-        role === "ADMIN"
-          ? await getAllPaymentsAdmin()
-          : await getMyPayments();
+        role === "ADMIN" ? await getAllPaymentsAdmin() : await getMyPayments();
 
       setPayments(res || []);
       setPage(1);
@@ -49,10 +49,8 @@ export default function Payments() {
     ITEMS_PER_PAGE
   );
 
-  
+  // CSV EXPORT (SAFE UTILITY)
   const exportToCSV = () => {
-    if (!payments.length) return;
-
     const headers =
       role === "ADMIN"
         ? [
@@ -87,40 +85,16 @@ export default function Payments() {
       return row;
     });
 
-    const csvContent =
-      headers.join(",") +
-      "\n" +
-      rows
-        .map((r) =>
-          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
-        )
-        .join("\n");
-
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
+    exportCSV({
+      headers,
+      rows,
+      fileName: role === "ADMIN" ? "payments-admin.csv" : "payments-renter.csv",
     });
-
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download =
-      role === "ADMIN" ? "payments-admin.csv" : "payments-renter.csv";
-
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    }, 100);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-32 text-center">
-        Loading payments...
-      </div>
+      <div className="min-h-screen pt-32 text-center">Loading payments...</div>
     );
   }
 
@@ -179,6 +153,7 @@ export default function Payments() {
                     <td className="px-4 py-3">
                       {p.vehicle?.make} {p.vehicle?.model}
                     </td>
+
                     {role === "ADMIN" && (
                       <td className="px-4 py-3">
                         <div className="font-medium">{p.renter?.name}</div>
@@ -187,24 +162,21 @@ export default function Payments() {
                         </div>
                       </td>
                     )}
+
                     <td className="px-4 py-3 font-semibold">₹{p.amount}</td>
+
                     <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          p.status === "SUCCESS"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {p.status === "CREATED" ? "FAILED" : p.status}
-                      </span>
+                      <StatusBadge
+                        status={p.status === "CREATED" ? "FAILED" : p.status}
+                      />
                     </td>
-                    <td className="px-4 py-3 text-xs">
-                      {p.razorpayOrderId}
-                    </td>
+
+                    <td className="px-4 py-3 text-xs">{p.razorpayOrderId}</td>
+
                     <td className="px-4 py-3 text-xs">
                       {p.razorpayPaymentId || "-"}
                     </td>
+
                     <td className="px-4 py-3 text-sm">
                       {p.status === "SUCCESS" ? (
                         <button
