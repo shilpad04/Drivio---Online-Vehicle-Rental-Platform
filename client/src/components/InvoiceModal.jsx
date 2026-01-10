@@ -11,6 +11,7 @@ export default function InvoiceModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white w-full max-w-3xl rounded-xl shadow-lg p-8 relative print:shadow-none print:rounded-none">
+
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-black print:hidden"

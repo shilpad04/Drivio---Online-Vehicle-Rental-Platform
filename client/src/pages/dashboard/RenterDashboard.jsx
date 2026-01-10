@@ -100,6 +100,9 @@ export default function RenterDashboard() {
   );
 }
 
+/* ===========================
+   REUSABLE UI
+=========================== */
 
 function Tile({ title, value, color, icon, onClick }) {
   return (

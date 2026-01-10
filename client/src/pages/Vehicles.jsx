@@ -4,7 +4,7 @@ import api from "../api/axios";
 import VehicleCard from "../components/VehicleCard";
 import { useAuth } from "../context/AuthContext";
 import FilterBar from "../components/FilterBar";
-
+import { paginate } from "../utils/pagination";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -91,12 +91,13 @@ export default function Vehicles({ searchQuery }) {
     else navigate("/");
   };
 
-  const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedVehicles = vehicles.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+  /* ===============================
+     PAGINATION (USING UTILITY)
+  =============================== */
+  const {
+    totalPages,
+    paginatedItems: paginatedVehicles,
+  } = paginate(vehicles, currentPage, ITEMS_PER_PAGE);
 
   if (loading) {
     return (

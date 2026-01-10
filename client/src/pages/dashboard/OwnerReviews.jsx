@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import Reviews from "../../components/Reviews";
-import { paginate } from "../../utils/pagination"; 
 
 const ITEMS_PER_PAGE = 3;
 
@@ -30,13 +29,11 @@ export default function OwnerReviews() {
     }
   };
 
-  /* ===============================
-     PAGINATION LOGIC
-  =============================== */
-  const { totalPages, paginatedItems: paginatedVehicles } = paginate(
-    vehicles,
-    currentPage,
-    ITEMS_PER_PAGE
+  const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedVehicles = vehicles.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
   );
 
   if (loading) {
@@ -45,7 +42,6 @@ export default function OwnerReviews() {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
-      {/* BACK */}
       <button
         onClick={() => navigate("/dashboard/owner")}
         className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
@@ -66,69 +62,49 @@ export default function OwnerReviews() {
             {paginatedVehicles.map((vehicle) => (
               <div
                 key={vehicle._id}
-                className="bg-white rounded-xl shadow p-6"
+                className="bg-white rounded-xl shadow p-6 space-y-4"
               >
-                {/* VEHICLE HEADER */}
-                <div className="flex flex-col md:flex-row gap-6 mb-4">
-                  {/* IMAGE */}
-                  <div className="w-full md:w-56 h-36 bg-gray-100 rounded overflow-hidden cursor-pointer hover:opacity-90">
+                <div className="flex gap-4">
+                  <div className="w-28 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                     {vehicle.images?.[0] ? (
                       <img
                         src={vehicle.images[0]}
-                        alt=""
+                        alt={`${vehicle.make} ${vehicle.model}`}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+                      <div className="h-full flex items-center justify-center text-gray-400 text-xs">
                         No Image
                       </div>
                     )}
                   </div>
 
-                  {/* BASIC INFO */}
                   <div className="flex-1">
-                    <h2 className="text-lg font-semibold mb-1">
+                    <h2 className="text-lg font-semibold">
                       {vehicle.make} {vehicle.model}
                     </h2>
 
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-600">
                       {vehicle.location} • {vehicle.category}
                     </p>
 
-                    {/* VIEW VEHICLE */}
                     <button
-                      onClick={() => navigate(`/vehicles/${vehicle._id}`)}
-                      className="text-sm text-blue-600 hover:underline"
+                      onClick={() =>
+                        navigate(`/vehicles/${vehicle._id}`)
+                      }
+                      className="text-sm text-blue-600 hover:underline mt-1"
                     >
                       View vehicle →
                     </button>
                   </div>
                 </div>
 
-                {/* REVIEWS SECTION */}
-                <div className="border-t pt-5 mt-5">
-                  <h3 className="text-md font-semibold mb-1">
-                    Customer Reviews
-                  </h3>
-
-                  {/* HELPER TEXT (ADD) */}
-                  <p className="text-xs text-gray-500 mb-3">
-                    Reviews are visible after a completed booking.
-                  </p>
-
-                  {/* EMPTY STATE (ADD) */}
-                  <div className="text-sm text-gray-500 mb-3">
-                    No reviews yet for this vehicle.
-                  </div>
-
-                  {/* REVIEWS FOR THIS VEHICLE */}
-                  <Reviews vehicleId={vehicle._id} />
-                </div>
+                {/* REVIEWS */}
+                <Reviews vehicleId={vehicle._id} />
               </div>
             ))}
           </div>
 
-          {/* PAGINATION CONTROLS */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-2 mt-10">
               <button

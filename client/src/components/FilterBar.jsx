@@ -55,6 +55,7 @@ export default function FilterBar({
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+
       <div className="relative col-span-2 md:col-span-1">
         <input
           type="text"

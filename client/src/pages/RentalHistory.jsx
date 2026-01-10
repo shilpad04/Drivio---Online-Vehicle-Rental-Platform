@@ -165,7 +165,7 @@ export default function RentalHistory() {
 }
 
 function RentalCard({ rental }) {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ✅ ADDITION (FIX)
 
   const { vehicle, startDate, endDate, status, _id, updatedAt } = rental;
   const isCancelled = status === "CANCELLED";
@@ -223,10 +223,9 @@ function RentalCard({ rental }) {
           {vehicle?._id && (
             <button
               onClick={() => navigate(`/vehicles/${vehicle._id}`)}
-              className="flex items-center gap-2 text-sm text-blue-600 hover:underline mt-2"
+              className="text-sm text-blue-600 hover:underline mt-2"
             >
-              <i className="fa-solid fa-rotate-right"></i>
-              Book this vehicle again
+              🔁 Book this vehicle again
             </button>
           )}
         </div>

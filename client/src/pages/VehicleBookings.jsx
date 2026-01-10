@@ -5,6 +5,7 @@ import api from "../api/axios";
 import ConfirmModal from "../components/ConfirmModal";
 import { paginate } from "../utils/pagination";
 
+
 const ITEMS_PER_PAGE = 5;
 
 export default function VehicleBookings() {
@@ -271,11 +272,12 @@ function BookingCard({ booking, role, refresh }) {
   };
 
   return (
-    <div
-      onClick={() => setOpen(!open)}
-      className={`bg-white rounded-xl shadow p-0 cursor-pointer relative
+ <div
+  onClick={() => setOpen(!open)}
+  className={`bg-white rounded-xl shadow p-0 cursor-pointer relative
               ${open ? "z-20" : "z-0"}`}
-    >
+>
+
       <div className="p-5 flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-60">
           <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden">

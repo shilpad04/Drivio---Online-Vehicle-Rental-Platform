@@ -108,6 +108,7 @@ export default function VehicleAvailability() {
     }
   };
 
+
   if (loading) {
     return <div className="min-h-screen pt-32 text-center">Loading...</div>;
   }

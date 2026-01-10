@@ -49,7 +49,7 @@ export default function Payments() {
     ITEMS_PER_PAGE
   );
 
-  //  CSV EXPORT
+  
   const exportToCSV = () => {
     if (!payments.length) return;
 
