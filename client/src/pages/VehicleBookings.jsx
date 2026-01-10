@@ -72,7 +72,14 @@ export default function VehicleBookings() {
   };
 
   const exportCSVFile = () => {
-    const headers = ["Vehicle", "Start Date", "End Date", "Status"];
+    const headers = [
+      "Vehicle",
+      "Fuel Type",          
+      "Kilometers Driven", 
+      "Start Date",
+      "End Date",
+      "Status",
+    ];
 
     if (role === "OWNER" || role === "ADMIN") {
       headers.push("Renter Name", "Renter Email");
@@ -81,6 +88,8 @@ export default function VehicleBookings() {
     const rows = bookings.map((b) => {
       const row = [
         `${b.vehicle?.make || ""} ${b.vehicle?.model || ""}`,
+        b.vehicle?.fuelType || "",          
+        b.vehicle?.kilometersDriven ?? "",   
         formatDate(b.startDate),
         formatDate(b.endDate),
         b.status,
@@ -214,7 +223,7 @@ export default function VehicleBookings() {
   );
 }
 
-
+// BOOKING CARD
 function BookingCard({ booking, role, refresh }) {
   const { vehicle, renter, startDate, endDate, status, _id } = booking;
   const [open, setOpen] = useState(false);
@@ -303,6 +312,19 @@ function BookingCard({ booking, role, refresh }) {
             </p>
           )}
 
+          {vehicle?.fuelType && (
+            <p>
+              <strong>Fuel Type:</strong> {vehicle.fuelType}
+            </p>
+          )}
+
+          {vehicle?.kilometersDriven !== undefined && (
+            <p>
+              <strong>Kilometers Driven:</strong>{" "}
+              {vehicle.kilometersDriven.toLocaleString()} km
+            </p>
+          )}
+
           {(role === "OWNER" || role === "ADMIN") && renter && (
             <div className="pt-3 border-t">
               <p className="font-medium mb-1">Renter Details</p>
@@ -360,9 +382,6 @@ function BookingCard({ booking, role, refresh }) {
     </div>
   );
 }
-
-<StatusBadge status={status} />
-
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString("en-IN", {

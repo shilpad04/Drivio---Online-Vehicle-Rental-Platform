@@ -12,6 +12,8 @@ export default function FilterBar({
   setMinPrice,
   maxPrice,
   setMaxPrice,
+  fuelType,          
+  setFuelType,     
 }) {
   const [allLocations, setAllLocations] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -54,8 +56,8 @@ export default function FilterBar({
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-
+    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+      {/* Location */}
       <div className="relative col-span-2 md:col-span-1">
         <input
           type="text"
@@ -80,6 +82,7 @@ export default function FilterBar({
         )}
       </div>
 
+      {/* Vehicle Type */}
       <select
         value={vehicleType}
         onChange={(e) => setVehicleType(e.target.value)}
@@ -91,6 +94,7 @@ export default function FilterBar({
         <option value="suv">SUV</option>
       </select>
 
+      {/* Category */}
       <select
         value={category}
         onChange={(e) => setCategory(e.target.value)}
@@ -98,10 +102,25 @@ export default function FilterBar({
       >
         <option value="">All Categories</option>
         <option value="economy">Economy</option>
+        <option value="premium">Premium</option>
         <option value="luxury">Luxury</option>
-        <option value="electric">Electric</option>
       </select>
 
+      {/* Fuel Type */}
+      <select
+        value={fuelType}
+        onChange={(e) => setFuelType(e.target.value)}
+        className="border rounded px-3 py-2 text-sm"
+      >
+        <option value="">All Fuel Types</option>
+        <option value="petrol">Petrol</option>
+        <option value="diesel">Diesel</option>
+        <option value="electric">Electric</option>
+        <option value="cng">CNG</option>
+        <option value="hybrid">Hybrid</option>
+      </select>
+
+      {/* Min Price */}
       <input
         type="number"
         placeholder="Min ₹"
@@ -110,6 +129,7 @@ export default function FilterBar({
         className="border rounded px-3 py-2 text-sm"
       />
 
+      {/* Max Price */}
       <input
         type="number"
         placeholder="Max ₹"

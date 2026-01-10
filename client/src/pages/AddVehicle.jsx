@@ -20,6 +20,8 @@ export default function AddVehicle() {
     year: "",
     vehicleType: "",
     category: "",
+    fuelType: "",          // ✅ ADDED
+    kilometersDriven: "",  // ✅ ADDED
     location: "",
     pricePerDay: "",
     description: "",
@@ -47,6 +49,7 @@ export default function AddVehicle() {
         ...form,
         year: Number(form.year),
         pricePerDay: Number(form.pricePerDay),
+        kilometersDriven: Number(form.kilometersDriven), // ✅ ADDED
         images,
       });
 
@@ -108,6 +111,32 @@ export default function AddVehicle() {
                 onChange={handleChange}
               />
             </div>
+
+            {/* ✅ Fuel Type & KM Driven (ONLY ADDITION) */}
+            <div className="grid md:grid-cols-2 gap-4 mt-4">
+              <select
+                name="fuelType"
+                required
+                className={inputClass}
+                onChange={handleChange}
+              >
+                <option value="">Select fuel type</option>
+                <option value="petrol">Petrol</option>
+                <option value="diesel">Diesel</option>
+                <option value="electric">Electric</option>
+                <option value="cng">CNG</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+
+              <input
+                type="number"
+                name="kilometersDriven"
+                placeholder="Kilometers driven"
+                required
+                className={inputClass}
+                onChange={handleChange}
+              />
+            </div>
           </section>
 
           {/* Category & Type */}
@@ -137,8 +166,8 @@ export default function AddVehicle() {
               >
                 <option value="">Select category</option>
                 <option value="economy">Economy</option>
+                <option value="premium">Premium</option>
                 <option value="luxury">Luxury</option>
-                <option value="electric">Electric</option>
               </select>
             </div>
           </section>
@@ -209,7 +238,7 @@ export default function AddVehicle() {
           </div>
         </form>
       </div>
-      
+
       <ConfirmModal
         open={showConfirm}
         title="Submit vehicle for approval?"

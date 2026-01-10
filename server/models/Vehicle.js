@@ -33,8 +33,20 @@ const vehicleSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: ["economy", "luxury", "electric"],
+      enum: ["economy", "premium", "luxury"],
       required: true,
+    },
+
+    fuelType: {
+      type: String,
+      enum: ["petrol", "diesel", "electric", "cng", "hybrid"], 
+      required: true,
+    },
+
+    kilometersDriven: {
+      type: Number,
+      required: true,
+      min: 0,
     },
 
     location: {

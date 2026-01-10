@@ -26,6 +26,7 @@ export default function Vehicles({ searchQuery }) {
   const [locationFilter, setLocationFilter] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [fuelType, setFuelType] = useState("");
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -56,6 +57,9 @@ export default function Vehicles({ searchQuery }) {
           if (locationFilter) params.location = locationFilter;
           if (vehicleType) params.vehicleType = vehicleType;
           if (category) params.category = category;
+
+          if (fuelType) params.fuelType = fuelType;
+
           if (minPrice) params.minPrice = minPrice;
           if (maxPrice) params.maxPrice = maxPrice;
 
@@ -81,6 +85,7 @@ export default function Vehicles({ searchQuery }) {
     vehicleType,
     category,
     locationFilter,
+    fuelType, 
     minPrice,
     maxPrice,
   ]);
@@ -125,6 +130,8 @@ export default function Vehicles({ searchQuery }) {
           setCategory={setCategory}
           location={locationFilter}
           setLocation={setLocationFilter}
+          fuelType={fuelType}          
+          setFuelType={setFuelType}    
           minPrice={minPrice}
           setMinPrice={setMinPrice}
           maxPrice={maxPrice}

@@ -166,7 +166,9 @@ export default function VehicleDetails() {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
 
   const prevImage = () =>
-    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? images.length - 1 : prev - 1
+    );
 
   return (
     <>
@@ -180,10 +182,8 @@ export default function VehicleDetails() {
 
         {/* STATUS */}
         <div className="mb-4">
-          <div className="mb-4">
-            <span className="text-sm font-medium mr-2">Status:</span>
-            <StatusBadge status={vehicle.status} />
-          </div>
+          <span className="text-sm font-medium mr-2">Status:</span>
+          <StatusBadge status={vehicle.status} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -230,20 +230,39 @@ export default function VehicleDetails() {
               <h3 className="text-lg font-semibold mb-4">
                 Vehicle Information
               </h3>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <p>
                   <span className="font-medium">Vehicle Type:</span>{" "}
                   {vehicle.vehicleType}
                 </p>
+
                 <p>
-                  <span className="font-medium">Year:</span> {vehicle.year}
+                  <span className="font-medium">Year:</span>{" "}
+                  {vehicle.year}
+                </p>
+
+                {/* ✅ ADDED */}
+                <p>
+                  <span className="font-medium">Fuel Type:</span>{" "}
+                  {vehicle.fuelType}
+                </p>
+
+                {/* ✅ ADDED */}
+                <p>
+                  <span className="font-medium">
+                    Kilometers Driven:
+                  </span>{" "}
+                  {vehicle.kilometersDriven?.toLocaleString()} km
                 </p>
               </div>
             </div>
 
             {vehicle.description && (
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Description
+                </h3>
                 <p className="text-gray-700 text-sm leading-relaxed">
                   {vehicle.description}
                 </p>
@@ -293,13 +312,17 @@ export default function VehicleDetails() {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) =>
+                    setStartDate(e.target.value)
+                  }
                   className="w-full border rounded px-3 py-2"
                 />
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) =>
+                    setEndDate(e.target.value)
+                  }
                   className="w-full border rounded px-3 py-2"
                 />
 
@@ -308,11 +331,15 @@ export default function VehicleDetails() {
                   disabled={checkingAvailability}
                   className="w-full px-4 py-2 rounded bg-gray-900 text-white"
                 >
-                  {checkingAvailability ? "Checking..." : "Check Availability"}
+                  {checkingAvailability
+                    ? "Checking..."
+                    : "Check Availability"}
                 </button>
 
                 {availabilityError && (
-                  <p className="text-red-600 text-sm">{availabilityError}</p>
+                  <p className="text-red-600 text-sm">
+                    {availabilityError}
+                  </p>
                 )}
 
                 {isAvailable && (
@@ -342,11 +369,21 @@ export default function VehicleDetails() {
       {/* CONFIRM MODAL */}
       <ConfirmModal
         open={confirmOpen}
-        title={confirmType === "approve" ? "Approve Vehicle" : "Reject Vehicle"}
-        confirmText={confirmType === "approve" ? "Approve" : "Reject"}
+        title={
+          confirmType === "approve"
+            ? "Approve Vehicle"
+            : "Reject Vehicle"
+        }
+        confirmText={
+          confirmType === "approve" ? "Approve" : "Reject"
+        }
         loading={actionLoading}
         onCancel={() => setConfirmOpen(false)}
-        onConfirm={confirmType === "approve" ? approveVehicle : rejectVehicle}
+        onConfirm={
+          confirmType === "approve"
+            ? approveVehicle
+            : rejectVehicle
+        }
       />
 
       <AuthModal

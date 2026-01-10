@@ -3,8 +3,15 @@ const Vehicle = require("../models/Vehicle");
 // PUBLIC / RENTER - Get approved vehicles with filters
 exports.getApprovedVehicles = async (req, res) => {
   try {
-    const { search, vehicleType, location, category, minPrice, maxPrice } =
-      req.query;
+    const {
+      search,
+      vehicleType,
+      location,
+      category,
+      minPrice,
+      maxPrice,
+      fuelType, 
+    } = req.query;
 
     const query = {
       status: "approved",
@@ -25,6 +32,10 @@ exports.getApprovedVehicles = async (req, res) => {
     }
 
     if (category) query.category = category;
+
+    if (fuelType) {
+      query.fuelType = fuelType;
+    }
 
     if (minPrice || maxPrice) {
       query.pricePerDay = {};
@@ -75,6 +86,7 @@ exports.addVehicle = async (req, res) => {
 
     res.status(201).json(vehicle);
   } catch (error) {
+    console.error("Add vehicle error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -82,12 +94,13 @@ exports.addVehicle = async (req, res) => {
 // OWNER - Get my vehicles (all statuses)
 exports.getMyVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({ ownerId: req.user.id }).sort({
-      createdAt: -1,
-    });
+    const vehicles = await Vehicle.find({
+      ownerId: req.user.id,
+    }).sort({ createdAt: -1 });
 
     res.json(vehicles);
   } catch (error) {
+    console.error("Get my vehicles error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -100,8 +113,8 @@ exports.getAllVehiclesForAdmin = async (req, res) => {
     }
 
     const { status } = req.query;
-
     const query = {};
+
     if (status) {
       query.status = status;
     }
@@ -132,6 +145,7 @@ exports.approveVehicle = async (req, res) => {
 
     res.json(vehicle);
   } catch (error) {
+    console.error("Approve vehicle error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -151,6 +165,7 @@ exports.rejectVehicle = async (req, res) => {
 
     res.json(vehicle);
   } catch (error) {
+    console.error("Reject vehicle error:", error);
     res.status(500).json({ message: error.message });
   }
 };
