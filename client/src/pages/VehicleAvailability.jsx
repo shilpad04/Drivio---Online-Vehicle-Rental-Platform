@@ -14,7 +14,7 @@ export default function VehicleAvailability() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 
-  //  PREPARE PAYMENT 
+  // PREPARE PAYMENT
   useEffect(() => {
     if (!startDate || !endDate) {
       navigate("/vehicles");
@@ -70,7 +70,7 @@ export default function VehicleAvailability() {
 
         handler: async function (response) {
           try {
-            // 3️ Verify payment 
+            // 3️ Verify payment
             await api.post("/payments/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -108,9 +108,12 @@ export default function VehicleAvailability() {
     }
   };
 
-
   if (loading) {
-    return <div className="min-h-screen pt-32 text-center">Loading...</div>;
+    return (
+      <div className="min-h-screen pt-32 text-center">
+        Loading...
+      </div>
+    );
   }
 
   if (error && !summary) {
@@ -125,7 +128,6 @@ export default function VehicleAvailability() {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-4xl mx-auto">
-      {/* BACK */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
@@ -134,7 +136,9 @@ export default function VehicleAvailability() {
         Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">Booking Summary</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Booking Summary
+      </h1>
 
       <div className="border rounded-lg p-6 bg-gray-50">
         <h2 className="text-lg font-semibold mb-2">
@@ -157,7 +161,9 @@ export default function VehicleAvailability() {
         </div>
 
         {error && (
-          <p className="text-red-500 mb-4">{error}</p>
+          <p className="text-red-500 mb-4">
+            {error}
+          </p>
         )}
 
         <button
@@ -165,7 +171,9 @@ export default function VehicleAvailability() {
           disabled={paying}
           className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {paying ? "Processing Payment..." : "Pay with Razorpay"}
+          {paying
+            ? "Processing Payment..."
+            : "Pay with Razorpay"}
         </button>
       </div>
     </div>

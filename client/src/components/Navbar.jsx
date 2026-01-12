@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "./AuthModal";
+import { redirectByRole } from "../utils/redirectByRole";
 
 export default function Navbar({ searchQuery, setSearchQuery }) {
   const [open, setOpen] = useState(false);
@@ -37,36 +38,22 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const openLogin = () => {
-    setAuthTab("login");
-    setAuthOpen(true);
-    setOpen(false);
-  };
-
-  const openRegister = () => {
-    setAuthTab("register");
+  const openAuth = (tab) => {
+    setAuthTab(tab);
     setAuthOpen(true);
     setOpen(false);
   };
 
   useEffect(() => {
-    if (location.state?.openAuthModal === "register") {
-      openRegister();
-      navigate(location.pathname, { replace: true });
-    }
-
-    if (location.state?.openAuthModal === "login") {
-      openLogin();
+    if (location.state?.openAuthModal) {
+      openAuth(location.state.openAuthModal);
       navigate(location.pathname, { replace: true });
     }
   }, [location.state, navigate]);
 
   const goToDashboard = () => {
     setDropdownOpen(false);
-
-    if (user.role === "RENTER") navigate("/dashboard/renter");
-    if (user.role === "OWNER") navigate("/dashboard/owner");
-    if (user.role === "ADMIN") navigate("/dashboard/admin");
+    redirectByRole(user, navigate, "dashboard");
   };
 
   const handleLogout = () => {
@@ -107,10 +94,7 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
                   placeholder="Search vehicle"
                   className="bg-transparent px-4 py-2 outline-none text-sm w-56"
                 />
-                <button
-                  onClick={handleSearch}
-                  className="px-4 text-gray-600"
-                >
+                <button onClick={handleSearch} className="px-4 text-gray-600">
                   <i className="fa-solid fa-magnifying-glass"></i>
                 </button>
               </div>
@@ -137,10 +121,10 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
 
             {!isAuthenticated ? (
               <div className="hidden md:flex gap-6 text-sm font-medium">
-                <button onClick={openLogin}>Login</button>
+                <button onClick={() => openAuth("login")}>Login</button>
                 <button
                   className="text-blue-600 font-semibold"
-                  onClick={openRegister}
+                  onClick={() => openAuth("register")}
                 >
                   Register
                 </button>

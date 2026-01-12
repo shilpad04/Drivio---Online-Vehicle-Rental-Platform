@@ -6,6 +6,7 @@ import Reviews from "../components/Reviews";
 import AuthModal from "../components/AuthModal";
 import ConfirmModal from "../components/ConfirmModal";
 import StatusBadge from "../components/StatusBadge";
+import BackButton from "../components/BackButton";
 
 export default function VehicleDetails() {
   const { id } = useParams();
@@ -17,7 +18,6 @@ export default function VehicleDetails() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Booking states
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -26,7 +26,6 @@ export default function VehicleDetails() {
 
   const [showAuth, setShowAuth] = useState(false);
 
-  // Confirm modal
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState(null);
 
@@ -72,7 +71,6 @@ export default function VehicleDetails() {
     setAvailabilityError("");
   }, [startDate, endDate]);
 
-  //  ADMIN ACTIONS
   const approveVehicle = async () => {
     try {
       setActionLoading(true);
@@ -154,7 +152,11 @@ export default function VehicleDetails() {
   };
 
   if (loading) {
-    return <div className="min-h-screen pt-32 text-center">Loading...</div>;
+    return (
+      <div className="min-h-screen pt-32 text-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!vehicle) return null;
@@ -173,12 +175,7 @@ export default function VehicleDetails() {
   return (
     <>
       <div className="min-h-screen pt-32 pb-24 px-6 max-w-6xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
-        >
-          ← Back
-        </button>
+        <BackButton />
 
         {/* STATUS */}
         <div className="mb-4">
@@ -238,17 +235,14 @@ export default function VehicleDetails() {
                 </p>
 
                 <p>
-                  <span className="font-medium">Year:</span>{" "}
-                  {vehicle.year}
+                  <span className="font-medium">Year:</span> {vehicle.year}
                 </p>
 
-                {/* ✅ ADDED */}
                 <p>
                   <span className="font-medium">Fuel Type:</span>{" "}
                   {vehicle.fuelType}
                 </p>
 
-                {/* ✅ ADDED */}
                 <p>
                   <span className="font-medium">
                     Kilometers Driven:
@@ -366,7 +360,6 @@ export default function VehicleDetails() {
         </div>
       </div>
 
-      {/* CONFIRM MODAL */}
       <ConfirmModal
         open={confirmOpen}
         title={

@@ -55,7 +55,6 @@ export default function ImageUpload({ images, setImages }) {
 
   return (
     <div className="space-y-4">
-      {/* Upload Box */}
       <label
         className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition
           ${
@@ -98,14 +97,12 @@ export default function ImageUpload({ images, setImages }) {
         </p>
       </label>
 
-      {/* Uploading text */}
       {uploading && (
         <p className="text-sm text-blue-600 font-medium">
           Uploading… please wait
         </p>
       )}
 
-      {/* Image Preview with Remove */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {images.map((url, index) => (
@@ -113,7 +110,6 @@ export default function ImageUpload({ images, setImages }) {
               key={index}
               className="relative group rounded-lg overflow-hidden border bg-white"
             >
-              {/* Remove button */}
               <button
                 type="button"
                 onClick={() => handleRemove(index)}

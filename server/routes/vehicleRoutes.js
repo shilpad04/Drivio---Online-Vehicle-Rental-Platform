@@ -10,25 +10,37 @@ const {
   getMyVehicles,
   getVehicleById,
   getAllVehiclesForAdmin,
+  updateVehicle,
+  deleteVehicle,
 } = require("../controllers/vehicleController");
 
+// =====================
 // PUBLIC
+// =====================
 router.get("/", getApprovedVehicles);
 
-// ADMIN
-router.get("/admin/all", auth, getAllVehiclesForAdmin);
-
+// =====================
 // OWNER
+// =====================
+router.post("/", auth, addVehicle);
 router.get("/my", auth, getMyVehicles);
 
-// PUBLIC
-router.get("/:id", getVehicleById);
-
-// OWNER
-router.post("/", auth, addVehicle);
-
-// ADMIN ACTIONS
+// =====================
+// ADMIN
+// =====================
+router.get("/admin/all", auth, getAllVehiclesForAdmin);
 router.put("/:id/approve", auth, approveVehicle);
 router.put("/:id/reject", auth, rejectVehicle);
+
+// =====================
+// OWNER ACTIONS
+// =====================
+router.put("/:id", auth, updateVehicle);
+router.delete("/:id", auth, deleteVehicle);
+
+// =====================
+// PUBLIC (KEEP LAST)
+// =====================
+router.get("/:id", getVehicleById);
 
 module.exports = router;

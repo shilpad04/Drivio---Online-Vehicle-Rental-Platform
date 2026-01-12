@@ -69,6 +69,17 @@ The system includes **real payment gateway integration**, **email notifications*
 - Admin payment monitoring
 - Invoice generation for completed payments
 
+> **Note:**  
+> The Razorpay payment gateway is currently integrated in **test mode**.  
+> For demonstration purposes:
+> - Only **Net Banking** payments simulate actual success or failure responses
+> - Other payment methods are mocked and do not perform real transactions
+> - Payment success or failure is displayed via Razorpay popup based on test responses  
+>
+> This setup is intentional and follows best practices for development and testing
+> environments. The system is production-ready and can be switched to live mode
+> by updating Razorpay credentials.
+
 ---
 
 ### 📜 Rental History Tracking
@@ -231,7 +242,9 @@ The system includes **real payment gateway integration**, **email notifications*
     - Vehicles.jsx
   - **utils**
     - exportCSV.js
+    - formatDate.js
     - pagination.js
+    - redirectByRole.js
   - App.jsx
   - main.jsx
   - index.css
@@ -317,5 +330,15 @@ npm run dev
 - Server-side validations
 
 ---
+
+## ⚠️ Development & Test Mode Disclaimer
+
+- Payment gateway is configured in **test mode**
+- No real money is charged
+- Test credentials are used for Razorpay integration
+- Designed to demonstrate full payment flow safely
+
+This approach ensures secure testing without financial risk and mirrors
+real-world production payment workflows.
 
 

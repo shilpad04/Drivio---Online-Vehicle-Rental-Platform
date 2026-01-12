@@ -6,6 +6,7 @@ import InvoiceModal from "../components/InvoiceModal";
 import { paginate } from "../utils/pagination";
 import { exportCSV } from "../utils/exportCSV";
 import StatusBadge from "../components/StatusBadge";
+import BackButton from "../components/BackButton";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -100,13 +101,7 @@ export default function Payments() {
 
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
-      <button
-        onClick={() => navigate(`/dashboard/${role?.toLowerCase()}`)}
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
-      >
-        <i className="fa-solid fa-arrow-left"></i>
-        Back
-      </button>
+      <BackButton to={`/dashboard/${role?.toLowerCase()}`} />
 
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Payments</h1>

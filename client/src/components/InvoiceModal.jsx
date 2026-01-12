@@ -19,7 +19,6 @@ export default function InvoiceModal({
           ✕
         </button>
 
-        {/* HEADER */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold">
             Payment Invoice
@@ -29,7 +28,6 @@ export default function InvoiceModal({
           </p>
         </div>
 
-        {/* STATUS */}
         <div className="mb-6 text-center">
           <span
             className={`px-4 py-1 rounded-full text-sm font-semibold ${
@@ -44,7 +42,6 @@ export default function InvoiceModal({
           </span>
         </div>
 
-        {/* DETAILS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
 
           <div>
@@ -94,7 +91,6 @@ export default function InvoiceModal({
           )}
         </div>
 
-        {/* ACTIONS */}
         <div className="mt-8 flex justify-end gap-4 print:hidden">
           <button
             onClick={() => window.print()}

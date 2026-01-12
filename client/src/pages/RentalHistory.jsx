@@ -4,6 +4,7 @@ import api from "../api/axios";
 import Reviews from "../components/Reviews";
 import { paginate } from "../utils/pagination";
 import StatusBadge from "../components/StatusBadge";
+import BackButton from "../components/BackButton";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -22,7 +23,7 @@ export default function RentalHistory() {
     fetchRentalHistory();
   }, []);
 
-  // ✅ FIXED PAGINATION EFFECT
+
   useEffect(() => {
     if (!rentals.length) {
       setPaginatedRentals([]);
@@ -36,7 +37,6 @@ export default function RentalHistory() {
       ITEMS_PER_PAGE
     );
 
-    // ✅ clamp invalid page
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
       return;
@@ -52,11 +52,9 @@ export default function RentalHistory() {
 
       const res = await api.get("/bookings/my");
 
-      // ✅ filter only valid bookings
       const history = (res.data || []).filter(
         (b) =>
-          (b.status === "COMPLETED" || b.status === "CANCELLED") &&
-          b.vehicle
+          (b.status === "COMPLETED" || b.status === "CANCELLED") && b.vehicle
       );
 
       setRentals(history);
@@ -110,23 +108,13 @@ export default function RentalHistory() {
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">
-        {error}
-      </div>
+      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
     );
   }
 
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
-      <button
-        type="button"
-        onClick={() => navigate("/dashboard/renter")}
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
-      >
-        <i className="fa-solid fa-arrow-left"></i>
-        Back
-      </button>
-
+      <BackButton to="/dashboard/renter" />
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Rental History</h1>
 
@@ -196,7 +184,7 @@ function RentalCard({ rental }) {
 
   const { vehicle, startDate, endDate, status, _id, updatedAt } = rental;
 
-  if (!vehicle) return null; // ✅ safety
+  if (!vehicle) return null;
 
   const isCancelled = status === "CANCELLED";
 
@@ -266,7 +254,7 @@ function RentalCard({ rental }) {
   );
 }
 
-<StatusBadge status={status} />
+<StatusBadge status={status} />;
 
 function formatDate(date) {
   return new Date(date).toLocaleDateString("en-IN", {

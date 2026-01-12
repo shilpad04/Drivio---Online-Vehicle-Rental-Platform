@@ -12,31 +12,30 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
-    if (storedToken) {
-      setToken(storedToken);
-
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-
-      api
-        .get("/auth/me")
-        .then((res) => {
-          setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
-        })
-        .catch((err) => {
-          if (err.response?.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            setToken(null);
-            setUser(null);
-          }
-        })
-        .finally(() => setLoading(false));
-    } else {
+    if (!storedToken) {
       setLoading(false);
+      return;
     }
+
+    setToken(storedToken);
+
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+
+    api
+      .get("/auth/me")
+      .then((res) => {
+        setUser(res.data);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      })
+      .catch((err) => {
+
+        console.warn("Auth hydration failed:", err.response?.status);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = async (email, password) => {

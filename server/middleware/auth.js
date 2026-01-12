@@ -37,15 +37,17 @@ module.exports = async (req, res, next) => {
         .json({ message: "Account deactivated" });
     }
 
+    // ✅ FINAL FIX: NORMALIZE ID TO STRING
     req.user = {
-      id: user._id,
+      id: user._id.toString(),   // 🔑 THIS WAS THE ROOT CAUSE
       role: user.role,
       name: user.name,
       email: user.email,
     };
 
     next();
-  } catch {
+  } catch (error) {
+    console.error("Auth error:", error);
     res.status(401).json({ message: "Token invalid" });
   }
 };

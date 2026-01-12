@@ -23,6 +23,7 @@ export default function RenterDashboard() {
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-8">Renter Dashboard</h1>
 
+      {/* Tiles sorted alphabetically */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardTile
           title="Analytics"
@@ -41,19 +42,19 @@ export default function RenterDashboard() {
         />
 
         <DashboardTile
-          title="Rental History"
-          value="View"
-          color="bg-green-600"
-          icon="fa-clock-rotate-left"
-          onClick={() => navigate("/dashboard/renter/rentals")}
-        />
-
-        <DashboardTile
           title="Payment History"
           value="View"
           color="bg-indigo-600"
           icon="fa-credit-card"
           onClick={() => navigate("/dashboard/renter/payments")}
+        />
+
+        <DashboardTile
+          title="Rental History"
+          value="View"
+          color="bg-green-600"
+          icon="fa-clock-rotate-left"
+          onClick={() => navigate("/dashboard/renter/rentals")}
         />
       </div>
 

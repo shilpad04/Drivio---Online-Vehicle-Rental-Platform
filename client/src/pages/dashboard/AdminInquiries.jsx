@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import BackButton from "../../components/BackButton";
+import StatusBadge from "../../components/StatusBadge";
 
 const ITEMS_PER_PAGE = 6;
-
-const statusStyles = {
-  OPEN: "bg-yellow-100 text-yellow-700",
-  REPLIED: "bg-blue-100 text-blue-700",
-  CLOSED: "bg-green-100 text-green-700",
-};
 
 export default function AdminInquiries() {
   const [inquiries, setInquiries] = useState([]);
@@ -87,6 +83,8 @@ export default function AdminInquiries() {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-6xl mx-auto">
+      <BackButton to="/dashboard/admin" />
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold">Support Inquiries</h1>
@@ -129,11 +127,7 @@ export default function AdminInquiries() {
                 </p>
               </div>
 
-              <span
-                className={`text-xs px-3 py-1 rounded-full w-fit ${statusStyles[inq.status]}`}
-              >
-                {inq.status}
-              </span>
+              <StatusBadge status={inq.status} />
             </div>
 
             <p className="text-gray-700 mb-4">{inq.message}</p>

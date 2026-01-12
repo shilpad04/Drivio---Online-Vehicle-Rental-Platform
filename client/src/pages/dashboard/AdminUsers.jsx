@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import BackButton from "../../components/BackButton";
 
 export default function AdminUsers() {
   const { user } = useAuth();
@@ -39,13 +40,7 @@ export default function AdminUsers() {
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
-      <button
-        onClick={() => navigate("/dashboard/admin")}
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
-      >
-        <i className="fa-solid fa-arrow-left"></i>
-        Back
-      </button>
+      <BackButton to="/dashboard/admin" />
 
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
 

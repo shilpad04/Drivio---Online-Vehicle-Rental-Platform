@@ -32,13 +32,14 @@ export default function OwnerDashboard() {
         </Link>
       </div>
 
+      {/* Tiles sorted alphabetically */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardTile
-          title="My Vehicles"
+          title="Analytics"
           value="View"
-          color="bg-indigo-600"
-          icon="fa-car"
-          onClick={() => navigate("/vehicles/my")}
+          color="bg-gray-800"
+          icon="fa-chart-line"
+          onClick={() => setShowAnalytics((p) => !p)}
         />
 
         <DashboardTile
@@ -50,19 +51,19 @@ export default function OwnerDashboard() {
         />
 
         <DashboardTile
+          title="My Vehicles"
+          value="View"
+          color="bg-indigo-600"
+          icon="fa-car"
+          onClick={() => navigate("/vehicles/my")}
+        />
+
+        <DashboardTile
           title="Reviews"
           value="View"
           color="bg-yellow-500"
           icon="fa-star"
           onClick={() => navigate("/dashboard/owner/reviews")}
-        />
-
-        <DashboardTile
-          title="Analytics"
-          value="View"
-          color="bg-gray-800"
-          icon="fa-chart-line"
-          onClick={() => setShowAnalytics((p) => !p)}
         />
       </div>
 

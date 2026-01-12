@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { redirectByRole } from "../utils/redirectByRole";
+
+const inputClass = "w-full border rounded-lg px-4 py-2";
 
 export default function AuthModal({ isOpen, onClose, defaultTab = "login" }) {
   const [tab, setTab] = useState(defaultTab);
@@ -64,7 +67,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }) {
   );
 }
 
-// LOGIN FORM (CONNECTED)
+//  LOGIN FORM 
 function LoginForm({ onClose }) {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -80,10 +83,7 @@ function LoginForm({ onClose }) {
     try {
       const user = await login(email, password);
       onClose();
-
-      if (user.role === "RENTER") navigate("/");
-      if (user.role === "OWNER") navigate("/dashboard/owner");
-      if (user.role === "ADMIN") navigate("/dashboard/admin");
+      redirectByRole(user, navigate);
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
@@ -99,7 +99,7 @@ function LoginForm({ onClose }) {
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       />
 
       <input
@@ -108,7 +108,7 @@ function LoginForm({ onClose }) {
         required
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       />
 
       <button className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">
@@ -139,10 +139,7 @@ function RegisterForm({ onClose }) {
     try {
       const user = await register(form);
       onClose();
-
-      if (user.role === "RENTER") navigate("/");
-      if (user.role === "OWNER") navigate("/dashboard/owner");
-      if (user.role === "ADMIN") navigate("/dashboard/admin");
+      redirectByRole(user, navigate);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }
@@ -157,7 +154,7 @@ function RegisterForm({ onClose }) {
         placeholder="Full name"
         required
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       />
 
       <input
@@ -165,7 +162,7 @@ function RegisterForm({ onClose }) {
         placeholder="Email address"
         required
         onChange={(e) => setForm({ ...form, email: e.target.value })}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       />
 
       <input
@@ -173,13 +170,13 @@ function RegisterForm({ onClose }) {
         placeholder="Password"
         required
         onChange={(e) => setForm({ ...form, password: e.target.value })}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       />
 
       <select
         value={form.role}
         onChange={(e) => setForm({ ...form, role: e.target.value })}
-        className="w-full border rounded-lg px-4 py-2"
+        className={inputClass}
       >
         <option value="RENTER">Renter</option>
         <option value="OWNER">Vehicle Owner</option>

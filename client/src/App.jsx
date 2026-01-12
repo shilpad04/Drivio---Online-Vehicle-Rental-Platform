@@ -125,6 +125,25 @@ function App() {
           }
         />
 
+        {/* ✅ OWNER VEHICLE ROUTES (ADDED) */}
+        <Route
+          path="/dashboard/owner/vehicles/add"
+          element={
+            <ProtectedRoute allowedRoles={["OWNER"]}>
+              <AddVehicle />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/owner/vehicles/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={["OWNER"]}>
+              <AddVehicle />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ADMIN – USER MANAGEMENT */}
         <Route
           path="/dashboard/admin/users"
@@ -230,7 +249,7 @@ function App() {
           }
         />
 
-        {/* OWNER */}
+        {/* OWNER (LEGACY – KEEP) */}
         <Route
           path="/owner/add-vehicle"
           element={
