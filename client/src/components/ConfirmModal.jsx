@@ -8,6 +8,7 @@ export default function ConfirmModal({
   danger = false,
   onConfirm,
   onCancel,
+  hideCancel = false,
 }) {
   if (!open) return null;
 
@@ -21,13 +22,15 @@ export default function ConfirmModal({
         )}
 
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className="px-4 py-2 text-sm rounded border hover:bg-gray-50"
-          >
-            {cancelText}
-          </button>
+          {!hideCancel && (
+            <button
+              onClick={onCancel}
+              disabled={loading}
+              className="px-4 py-2 text-sm rounded border hover:bg-gray-50"
+            >
+              {cancelText}
+            </button>
+          )}
 
           <button
             onClick={onConfirm}

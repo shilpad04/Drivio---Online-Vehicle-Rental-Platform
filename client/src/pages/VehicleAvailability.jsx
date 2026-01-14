@@ -107,27 +107,18 @@ export default function VehicleAvailability() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to initiate payment"
-      );
+      setError(err.response?.data?.message || "Failed to initiate payment");
       setPaying(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen pt-32 text-center">
-        Loading...
-      </div>
-    );
+    return <div className="min-h-screen pt-32 text-center">Loading...</div>;
   }
 
   if (error && !summary) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-500">
-        {error}
-      </div>
+      <div className="min-h-screen pt-32 text-center text-red-500">{error}</div>
     );
   }
 
@@ -143,14 +134,11 @@ export default function VehicleAvailability() {
         Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">
-        Booking Summary
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">Booking Summary</h1>
 
       <div className="border rounded-lg p-6 bg-gray-50">
         <h2 className="text-lg font-semibold mb-2">
-          {summary.vehicleSummary.make}{" "}
-          {summary.vehicleSummary.model}
+          {summary.vehicleSummary.make} {summary.vehicleSummary.model}
         </h2>
 
         <p className="text-sm text-gray-600 mb-4">
@@ -167,28 +155,23 @@ export default function VehicleAvailability() {
           </p>
         </div>
 
-        {error && (
-          <p className="text-red-500 mb-4">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         <button
           onClick={startPayment}
           disabled={paying}
           className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {paying
-            ? "Processing Payment..."
-            : "Pay with Razorpay"}
+          {paying ? "Processing Payment..." : "Pay with Razorpay"}
         </button>
       </div>
 
       <ConfirmModal
         open={showSuccess}
         title="Booking Confirmed 🎉"
-        description="Your booking has been confirmed successfully. "
+        description="Your booking has been confirmed successfully."
         confirmText="Go To Dashboard"
+        hideCancel
         onConfirm={() => navigate("/dashboard/renter")}
       />
     </div>
