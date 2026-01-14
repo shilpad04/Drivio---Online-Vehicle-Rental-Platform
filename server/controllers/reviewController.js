@@ -79,9 +79,23 @@ exports.addReview = async (req, res) => {
 // GET REVIEWS FOR A VEHICLE 
 exports.getVehicleReviews = async (req, res) => {
   try {
-    const reviews = await Review.find({
+    const { minRating, search } = req.query;
+
+    const query = {
       vehicleId: req.params.vehicleId,
-    })
+    };
+
+    query.isHidden = { $ne: true };
+
+    if (minRating) {
+      query.rating = { $gte: Number(minRating) };
+    }
+
+    if (search) {
+      query.comment = { $regex: search, $options: "i" };
+    }
+
+    const reviews = await Review.find(query)
       .populate("renterId", "name")
       .sort({ createdAt: -1 });
 
@@ -91,9 +105,7 @@ exports.getVehicleReviews = async (req, res) => {
   }
 };
 
-
-// ADMIN: GET ALL REVIEWS
-
+// ADMIN: GET ALL REVIEWS 
 exports.getAllReviewsForAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -117,7 +129,8 @@ exports.getAllReviewsForAdmin = async (req, res) => {
   }
 };
 
-// ADMIN — hide review
+
+// ADMIN — hide review 
 exports.hideReview = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -159,7 +172,7 @@ exports.unhideReview = async (req, res) => {
   }
 };
 
-// ADMIN — delete review
+// ADMIN — delete review 
 exports.deleteReview = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {

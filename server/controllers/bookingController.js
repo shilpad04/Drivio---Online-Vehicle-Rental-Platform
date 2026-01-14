@@ -10,12 +10,14 @@ const {
 
 const autoCompleteExpiredBookings = require("../utils/autoCompleteExpiredBookings");
 
+// CREATE BOOKING (DISABLED)
 exports.createBooking = async (req, res) => {
   return res.status(410).json({
     message: "Direct booking is disabled",
   });
 };
 
+// CANCEL BOOKING
 exports.cancelBooking = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -57,6 +59,7 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+// COMPLETE BOOKING (ADMIN)
 exports.completeBooking = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -94,6 +97,7 @@ exports.completeBooking = async (req, res) => {
   }
 };
 
+// RENTER – GET MY BOOKINGS
 exports.getMyBookings = async (req, res) => {
   try {
     await autoCompleteExpiredBookings();
@@ -102,13 +106,77 @@ exports.getMyBookings = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const bookings = await Booking.find({ renter: req.user.id })
+    const { search, status, startDate, endDate } = req.query;
+
+    const query = {
+      renter: req.user.id,
+    };
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (startDate || endDate) {
+      query.startDate = {};
+      if (startDate) query.startDate.$gte = new Date(startDate);
+      if (endDate) query.startDate.$lte = new Date(endDate);
+    }
+
+    let bookings = await Booking.find(query)
       .populate("vehicle")
       .sort({ createdAt: -1 });
 
+    if (search) {
+      const keyword = search.toLowerCase();
+      bookings = bookings.filter(
+        (b) =>
+          b.vehicle &&
+          (b.vehicle.make.toLowerCase().includes(keyword) ||
+            b.vehicle.model.toLowerCase().includes(keyword))
+      );
+    }
+
     res.json(bookings);
   } catch (error) {
-    console.error("Get bookings error:", error);
+    console.error("Get my bookings error:", error);
+    res.status(500).json({ message: "Failed to fetch bookings" });
+  }
+};
+
+// OWNER – GET BOOKINGS FOR MY VEHICLES (NO PAYMENT LOGIC)
+exports.getOwnerBookings = async (req, res) => {
+  try {
+    await autoCompleteExpiredBookings();
+
+    if (req.user.role !== "OWNER") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { search } = req.query;
+
+    const vehicles = await Vehicle.find({ owner: req.user.id }).select("_id");
+    const vehicleIds = vehicles.map((v) => v._id);
+
+    let bookings = await Booking.find({
+      vehicle: { $in: vehicleIds },
+    })
+      .populate("vehicle")
+      .populate("renter", "name email")
+      .sort({ createdAt: -1 });
+
+    if (search) {
+      const keyword = search.toLowerCase();
+      bookings = bookings.filter(
+        (b) =>
+          b.vehicle &&
+          (b.vehicle.make.toLowerCase().includes(keyword) ||
+            b.vehicle.model.toLowerCase().includes(keyword))
+      );
+    }
+
+    res.json(bookings);
+  } catch (error) {
+    console.error("Get owner bookings error:", error);
     res.status(500).json({ message: "Failed to fetch bookings" });
   }
 };

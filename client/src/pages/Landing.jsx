@@ -6,7 +6,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-export default function Landing() {
+export default function Landing({ locationQuery }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -26,21 +26,26 @@ export default function Landing() {
         setLoading(false);
       }
     };
-
     fetchVehicles();
   }, []);
+
+  const handleExplore = () => {
+    if (locationQuery) {
+      navigate(`/vehicles?location=${encodeURIComponent(locationQuery)}`);
+    } else {
+      navigate("/vehicles");
+    }
+  };
 
   const handleListVehicle = () => {
     if (!user) {
       setShowAuth(true);
       return;
     }
-
     if (user.role !== "owner") {
       setShowOwnerOnly(true);
       return;
     }
-
     navigate("/dashboard/owner");
   };
 
@@ -59,7 +64,6 @@ export default function Landing() {
             <h1 className="text-4xl md:text-5xl font-bold leading-tight">
               Rent Cars & Bikes <br /> Anytime, Anywhere
             </h1>
-
             <p className="mt-4 text-gray-600">
               Your next ride is just a few clicks away
             </p>
@@ -72,14 +76,6 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-10">Popular Vehicles</h2>
 
-          {loading && <p className="text-gray-500">Loading vehicles...</p>}
-
-          {!loading && vehicles.length === 0 && (
-            <p className="text-gray-500">
-              No vehicles available at the moment
-            </p>
-          )}
-
           {!loading && vehicles.length > 0 && (
             <div className="grid md:grid-cols-3 gap-6">
               {vehicles.slice(0, 3).map((vehicle) => (
@@ -89,12 +85,12 @@ export default function Landing() {
           )}
 
           <div className="mt-12 flex gap-4 justify-center">
-            <a
-              href="/vehicles"
+            <button
+              onClick={handleExplore}
               className="bg-blue-600 text-white px-8 py-3 rounded-lg shadow"
             >
               Explore Vehicles
-            </a>
+            </button>
 
             <button
               onClick={handleListVehicle}
@@ -106,15 +102,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* AUTH MODAL */}
       <AuthModal
-        key={showAuth ? "register" : "closed"}
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         defaultTab="register"
       />
 
-      {/* OWNER RESTRICTION MODAL */}
       <ConfirmModal
         open={showOwnerOnly}
         title="Access Restricted"

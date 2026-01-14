@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import UserForm from "../components/UserForm";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function UserProfile() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -15,8 +17,11 @@ export default function UserProfile() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -44,6 +49,7 @@ export default function UserProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     setMessage("");
     setError("");
 
@@ -62,6 +68,28 @@ export default function UserProfile() {
       setForm({ ...form, password: "" });
     } catch (err) {
       setError(err.response?.data?.message || "Update failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (user?.role === "ADMIN") {
+      setError("Admin accounts cannot be deleted");
+      setShowDeleteModal(false);
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await api.delete("/users/profile");
+      logout();
+      navigate("/");
+    } catch {
+      setError("Failed to delete account");
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -99,30 +127,19 @@ export default function UserProfile() {
             {message && <p className="text-green-600 mb-4">{message}</p>}
             {error && <p className="text-red-600 mb-4">{error}</p>}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block mb-1 font-medium">Name</label>
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded"
-                  required
-                />
-              </div>
+            {user?.role === "ADMIN" && (
+              <p className="mb-4 text-sm text-gray-500">
+                Admin accounts cannot be deleted for security reasons.
+              </p>
+            )}
 
-              <div>
-                <label className="block mb-1 font-medium">Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full border px-4 py-2 rounded"
-                  required
-                />
-              </div>
-
+            <UserForm
+              form={form}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              loading={saving}
+              showRole={false}
+            >
               <div>
                 <label className="block mb-1 font-medium">Role</label>
                 <div className="w-full border px-4 py-2 rounded bg-gray-100 text-gray-700">
@@ -142,16 +159,39 @@ export default function UserProfile() {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-              >
-                Update Profile
-              </button>
-            </form>
+              <div className="flex gap-4 mt-6">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                >
+                  Update Profile
+                </button>
+
+                {user?.role !== "ADMIN" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700"
+                  >
+                    Delete My Account
+                  </button>
+                )}
+              </div>
+            </UserForm>
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        title="Delete Account"
+        description="This action cannot be undone. Are you sure you want to delete your account?"
+        confirmText="Delete"
+        danger
+        loading={deleting}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

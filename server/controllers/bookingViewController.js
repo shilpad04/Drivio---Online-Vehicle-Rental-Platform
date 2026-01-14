@@ -1,10 +1,9 @@
 const Booking = require("../models/Booking");
 const Vehicle = require("../models/Vehicle");
 
-//  ADMIN – View all bookings
+// ADMIN – View all bookings
 exports.getAllBookingsAdmin = async (req, res) => {
   try {
-
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -28,15 +27,22 @@ exports.getAllBookingsAdmin = async (req, res) => {
       .populate("renter", "name email role")
       .sort({ createdAt: -1 });
 
-    // Search by vehicle make / model
-    if (search) {
+      if (search) {
       const keyword = search.toLowerCase();
-      bookings = bookings.filter(
-        (b) =>
+
+      bookings = bookings.filter((b) => {
+        const vehicleMatch =
           b.vehicle &&
           (b.vehicle.make.toLowerCase().includes(keyword) ||
-            b.vehicle.model.toLowerCase().includes(keyword))
-      );
+            b.vehicle.model.toLowerCase().includes(keyword));
+
+        const renterMatch =
+          b.renter &&
+          (b.renter.name.toLowerCase().includes(keyword) ||
+            b.renter.email.toLowerCase().includes(keyword));
+
+        return vehicleMatch || renterMatch;
+      });
     }
 
     res.json(bookings);
@@ -49,7 +55,6 @@ exports.getAllBookingsAdmin = async (req, res) => {
 // OWNER – View bookings for own vehicles
 exports.getOwnerBookings = async (req, res) => {
   try {
-  
     if (req.user.role !== "OWNER") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -72,14 +77,13 @@ exports.getOwnerBookings = async (req, res) => {
       .populate("renter", "name email role")
       .sort({ createdAt: -1 });
 
-    // Search by vehicle make / model
     if (search) {
       const keyword = search.toLowerCase();
+
       bookings = bookings.filter(
         (b) =>
           b.vehicle &&
-          (b.vehicle.make.toLowerCase().includes(keyword) ||
-            b.vehicle.model.toLowerCase().includes(keyword))
+          b.vehicle.model.toLowerCase().includes(keyword)
       );
     }
 

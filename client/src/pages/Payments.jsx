@@ -7,6 +7,7 @@ import { paginate } from "../utils/pagination";
 import { exportCSV } from "../utils/exportCSV";
 import StatusBadge from "../components/StatusBadge";
 import BackButton from "../components/BackButton";
+import { formatDate } from "../utils/formatDate";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -50,46 +51,35 @@ export default function Payments() {
     ITEMS_PER_PAGE
   );
 
-  // CSV EXPORT (SAFE UTILITY)
   const exportToCSV = () => {
-    const headers =
-      role === "ADMIN"
-        ? [
-            "Date",
-            "Vehicle",
-            "Renter Name",
-            "Renter Email",
-            "Amount",
-            "Status",
-            "Order ID",
-            "Payment ID",
-          ]
-        : ["Date", "Vehicle", "Amount", "Status", "Order ID", "Payment ID"];
+    if (role !== "ADMIN") return;
 
-    const rows = payments.map((p) => {
-      const row = [
-        new Date(p.createdAt).toLocaleDateString(),
-        `${p.vehicle?.make || ""} ${p.vehicle?.model || ""}`,
-      ];
+    const headers = [
+      "Date",
+      "Vehicle",
+      "Renter Name",
+      "Renter Email",
+      "Amount",
+      "Status",
+      "Order ID",
+      "Payment ID",
+    ];
 
-      if (role === "ADMIN") {
-        row.push(p.renter?.name || "", p.renter?.email || "");
-      }
-
-      row.push(
-        p.amount,
-        p.status === "CREATED" ? "FAILED" : p.status,
-        p.razorpayOrderId || "",
-        p.razorpayPaymentId || ""
-      );
-
-      return row;
-    });
+    const rows = payments.map((p) => [
+      formatDate(p.createdAt),
+      `${p.vehicle?.make || ""} ${p.vehicle?.model || ""}`,
+      p.renter?.name || "",
+      p.renter?.email || "",
+      p.amount,
+      p.status === "CREATED" ? "FAILED" : p.status,
+      p.razorpayOrderId || "",
+      p.razorpayPaymentId || "",
+    ]);
 
     exportCSV({
       headers,
       rows,
-      fileName: role === "ADMIN" ? "payments-admin.csv" : "payments-renter.csv",
+      fileName: "payments-admin.csv",
     });
   };
 
@@ -106,7 +96,7 @@ export default function Payments() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Payments</h1>
 
-        {payments.length > 0 && (
+        {role === "ADMIN" && payments.length > 0 && (
           <button
             onClick={exportToCSV}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
@@ -142,9 +132,8 @@ export default function Payments() {
               <tbody>
                 {paginatedPayments.map((p) => (
                   <tr key={p._id} className="border-t hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      {new Date(p.createdAt).toLocaleDateString()}
-                    </td>
+                    <td className="px-4 py-3">{formatDate(p.createdAt)}</td>
+
                     <td className="px-4 py-3">
                       {p.vehicle?.make} {p.vehicle?.model}
                     </td>

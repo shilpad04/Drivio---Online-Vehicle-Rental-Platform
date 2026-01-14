@@ -44,6 +44,7 @@ import AdminUserDetails from "./pages/dashboard/AdminUserDetails";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState(""); // ✅ NEW
   const { user } = useAuth();
 
   return (
@@ -51,6 +52,8 @@ function App() {
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        locationQuery={locationQuery}
+        setLocationQuery={setLocationQuery}
       />
 
       <Routes>
@@ -59,10 +62,7 @@ function App() {
           path="/"
           element={
             !user || user.role === "RENTER" ? (
-              <Landing
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-              />
+              <Landing />
             ) : (
               <Navigate
                 to={
@@ -79,7 +79,12 @@ function App() {
         {/* VEHICLES */}
         <Route
           path="/vehicles"
-          element={<Vehicles searchQuery={searchQuery} />}
+          element={
+            <Vehicles
+              searchQuery={searchQuery}
+              locationQuery={locationQuery}
+            />
+          }
         />
         <Route path="/vehicles/:id" element={<VehicleDetails />} />
 
@@ -125,7 +130,7 @@ function App() {
           }
         />
 
-        {/* ✅ OWNER VEHICLE ROUTES (ADDED) */}
+        {/* OWNER VEHICLE ROUTES */}
         <Route
           path="/dashboard/owner/vehicles/add"
           element={
@@ -249,17 +254,6 @@ function App() {
           }
         />
 
-        {/* OWNER (LEGACY – KEEP) */}
-        <Route
-          path="/owner/add-vehicle"
-          element={
-            <ProtectedRoute allowedRoles={["OWNER"]}>
-              <AddVehicle />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* PROFILE */}
         <Route
           path="/profile"
           element={

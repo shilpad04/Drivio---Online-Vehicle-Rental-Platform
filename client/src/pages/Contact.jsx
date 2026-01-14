@@ -90,7 +90,7 @@ export default function Contact() {
         </p>
       </div>
 
-      {/* GUEST VIEW — UNCHANGED */}
+      {/* GUEST VIEW  */}
       {!user && (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-10 shadow-sm space-y-6">
           <div>

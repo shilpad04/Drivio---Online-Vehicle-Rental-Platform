@@ -12,12 +12,10 @@ export default function FilterBar({
   setMinPrice,
   maxPrice,
   setMaxPrice,
-  fuelType,          
-  setFuelType,     
+  fuelType,
+  setFuelType,
 }) {
   const [allLocations, setAllLocations] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -28,59 +26,24 @@ export default function FilterBar({
         setAllLocations([]);
       }
     };
-
     fetchLocations();
   }, []);
 
-  const handleLocationChange = (value) => {
-    setLocation(value);
-
-    if (!value.trim()) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    const matches = allLocations.filter((loc) =>
-      loc.toLowerCase().includes(value.toLowerCase())
-    );
-
-    setSuggestions(matches);
-    setShowSuggestions(true);
-  };
-
-  const handleSelect = (loc) => {
-    setLocation(loc);
-    setSuggestions([]);
-    setShowSuggestions(false);
-  };
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-      {/* Location */}
-      <div className="relative col-span-2 md:col-span-1">
-        <input
-          type="text"
-          placeholder="Enter location"
-          value={location}
-          onChange={(e) => handleLocationChange(e.target.value)}
-          className="border rounded px-3 py-2 text-sm w-full"
-        />
-
-        {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-30 bg-white border rounded mt-1 w-full max-h-40 overflow-y-auto shadow text-sm">
-            {suggestions.map((loc) => (
-              <li
-                key={loc}
-                onClick={() => handleSelect(loc)}
-                className="px-3 py-2 cursor-pointer hover:bg-gray-100"
-              >
-                {loc}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Location Dropdown */}
+      <select
+        value={location}
+        onChange={(e) => setLocation(e.target.value)}
+        className="border rounded px-3 py-2 text-sm"
+      >
+        <option value="">All Locations</option>
+        {allLocations.map((loc) => (
+          <option key={loc} value={loc}>
+            {loc}
+          </option>
+        ))}
+      </select>
 
       {/* Vehicle Type */}
       <select

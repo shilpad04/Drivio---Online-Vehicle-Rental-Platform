@@ -2,14 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "./AuthModal";
+import api from "../api/axios"; 
 import { redirectByRole } from "../utils/redirectByRole";
 
-export default function Navbar({ searchQuery, setSearchQuery }) {
+export default function Navbar({
+  searchQuery,
+  setSearchQuery,
+  locationQuery,          
+  setLocationQuery,      
+}) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authTab, setAuthTab] = useState("login");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [locations, setLocations] = useState([]); 
 
   const dropdownRef = useRef(null);
 
@@ -21,6 +28,11 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
   const isOwner = user?.role === "OWNER";
   const isRenterOrGuest = !user || user.role === "RENTER";
   const isOwnerOrAdmin = isAdmin || isOwner;
+
+ 
+  useEffect(() => {
+    api.get("/vehicles/locations").then((res) => setLocations(res.data));
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -68,12 +80,16 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
 
   return (
     <>
+      {/* NAVBAR */}
       <nav
-        className={`fixed top-0 w-full z-50 transition-all ${
-          scrolled ? "bg-white shadow-md" : "bg-white"
+        className={`fixed top-0 w-full z-50 transition-all border-b border-gray-200/50 ${
+          scrolled
+            ? "bg-white/80 backdrop-blur shadow-md"
+            : "bg-white/60 backdrop-blur"
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center">
+          {/* LOGO */}
           <div className="flex items-center">
             <i className="fa-solid fa-car-side text-blue-600 text-2xl"></i>
             <span className="ml-2 text-2xl font-bold text-blue-600">
@@ -81,9 +97,12 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
             </span>
           </div>
 
+          {/* SEARCH (RENTER / GUEST) */}
           {isRenterOrGuest && (
             <div className="hidden lg:flex mx-auto">
               <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden">
+                
+                {/* Vehicle search */}
                 <input
                   type="text"
                   value={searchQuery}
@@ -92,15 +111,38 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
                     if (e.key === "Enter") handleSearch();
                   }}
                   placeholder="Search vehicle"
-                  className="bg-transparent px-4 py-2 outline-none text-sm w-56"
+                  className="bg-transparent px-4 py-2 outline-none text-sm w-44"
                 />
-                <button onClick={handleSearch} className="px-4 text-gray-600">
+
+                {/* Location dropdown */}
+                <select
+                  value={locationQuery}
+                  onChange={(e) => {
+                    setLocationQuery(e.target.value);
+                    navigate("/vehicles");
+                  }}
+                  className="bg-transparent px-2 py-2 outline-none text-sm border-l"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map((loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Search button  */}
+                <button
+                  onClick={handleSearch}
+                  className="px-4 text-gray-600"
+                >
                   <i className="fa-solid fa-magnifying-glass"></i>
                 </button>
               </div>
             </div>
           )}
 
+          {/* RIGHT SECTION */}
           <div className="ml-auto flex items-center gap-6">
             {isOwnerOrAdmin && (
               <Link
@@ -112,18 +154,31 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
             )}
 
             {isRenterOrGuest && (
-              <ul className="hidden md:flex gap-8 text-sm font-medium">
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/vehicles">Vehicles</Link></li>
-                <li><Link to="/how-it-works">How It Works</Link></li>
+              <ul className="hidden md:flex gap-8 text-sm font-medium text-gray-700">
+                <li>
+                  <Link to="/" className="hover:text-blue-600">Home</Link>
+                </li>
+                <li>
+                  <Link to="/vehicles" className="hover:text-blue-600">Vehicles</Link>
+                </li>
+                <li>
+                  <Link to="/how-it-works" className="hover:text-blue-600">
+                    How It Works
+                  </Link>
+                </li>
               </ul>
             )}
 
             {!isAuthenticated ? (
               <div className="hidden md:flex gap-6 text-sm font-medium">
-                <button onClick={() => openAuth("login")}>Login</button>
                 <button
-                  className="text-blue-600 font-semibold"
+                  onClick={() => openAuth("login")}
+                  className="text-gray-700 hover:text-blue-600"
+                >
+                  Login
+                </button>
+                <button
+                  className="text-blue-600 font-semibold hover:underline"
                   onClick={() => openAuth("register")}
                 >
                   Register
@@ -139,7 +194,7 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-40 bg-white shadow-lg rounded-lg text-sm">
+                  <div className="absolute right-0 mt-3 w-40 bg-white shadow-lg rounded-lg text-sm overflow-hidden">
                     <button
                       onClick={goToDashboard}
                       className="w-full px-4 py-2 hover:bg-gray-100 text-left"
@@ -166,8 +221,9 @@ export default function Navbar({ searchQuery, setSearchQuery }) {
               </div>
             )}
 
+            {/* MOBILE MENU*/}
             <button
-              className="md:hidden text-xl"
+              className="md:hidden text-xl text-gray-700"
               onClick={() => setOpen(!open)}
             >
               <i className={`fa-solid ${open ? "fa-xmark" : "fa-bars"}`} />

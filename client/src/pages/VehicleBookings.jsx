@@ -22,15 +22,25 @@ export default function VehicleBookings() {
     location.pathname.includes("/dashboard/renter/rentals");
 
   const [bookings, setBookings] = useState([]);
+  const [paymentMap, setPaymentMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   useEffect(() => {
     setCurrentPage(1);
     fetchBookings();
-  }, [role, location.pathname]);
+  }, [role, location.pathname, debouncedSearch]);
 
   const fetchBookings = async () => {
     try {
@@ -41,7 +51,10 @@ export default function VehicleBookings() {
       if (role === "OWNER") url = "/bookings/view/owner";
       if (role === "ADMIN") url = "/bookings/view/admin";
 
-      const res = await api.get(url);
+      const params = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+
+      const res = await api.get(url, { params });
       let data = res.data || [];
 
       if (isRenterHistory) {
@@ -49,6 +62,31 @@ export default function VehicleBookings() {
       }
 
       setBookings(data);
+
+      if (role === "OWNER") {
+        try {
+          const paymentRes = await api.get("/payments/owner");
+          const map = {};
+
+          paymentRes.data.forEach((p) => {
+            if (!p.amount || !p.booking) return;
+
+            const bookingId =
+              typeof p.booking === "object"
+                ? p.booking._id?.toString()
+                : p.booking.toString();
+
+            if (bookingId) {
+              map[bookingId] = p.amount;
+            }
+          });
+
+          setPaymentMap(map);
+        } catch (err) {
+          console.warn("Owner payments failed to load");
+          setPaymentMap({});
+        }
+      }
     } catch {
       setError("Failed to load bookings");
     } finally {
@@ -74,6 +112,8 @@ export default function VehicleBookings() {
   };
 
   const exportCSVFile = () => {
+    if (role !== "ADMIN") return;
+
     const headers = [
       "Vehicle",
       "Fuel Type",
@@ -81,37 +121,26 @@ export default function VehicleBookings() {
       "Start Date",
       "End Date",
       "Status",
+      "Renter Name",
+      "Renter Email",
     ];
 
-    if (role === "OWNER" || role === "ADMIN") {
-      headers.push("Renter Name", "Renter Email");
-    }
+    const rows = bookings.map((b) => [
+      `${b.vehicle?.make || ""} ${b.vehicle?.model || ""}`,
+      b.vehicle?.fuelType || "",
+      b.vehicle?.kilometersDriven ?? "",
+      formatDate(b.startDate),
+      formatDate(b.endDate),
+      b.status,
+      b.renter?.name || "",
+      b.renter?.email || "",
+    ]);
 
-    const rows = bookings.map((b) => {
-      const row = [
-        `${b.vehicle?.make || ""} ${b.vehicle?.model || ""}`,
-        b.vehicle?.fuelType || "",
-        b.vehicle?.kilometersDriven ?? "",
-        formatDate(b.startDate),
-        formatDate(b.endDate),
-        b.status,
-      ];
-
-      if (role === "OWNER" || role === "ADMIN") {
-        row.push(b.renter?.name || "", b.renter?.email || "");
-      }
-
-      return row;
+    exportCSV({
+      headers,
+      rows,
+      fileName: "bookings-admin.csv",
     });
-
-    const fileName =
-      role === "ADMIN"
-        ? "bookings-admin.csv"
-        : role === "OWNER"
-        ? "bookings-owner.csv"
-        : "bookings-renter.csv";
-
-    exportCSV({ headers, rows, fileName });
   };
 
   if (loading) {
@@ -137,6 +166,19 @@ export default function VehicleBookings() {
         </h1>
 
         <div className="flex items-center gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder={
+              role === "ADMIN" ? "Search renter or vehicle" : "Search vehicle"
+            }
+            className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm w-56"
+          />
+
           <select
             value={statusFilter}
             onChange={(e) => {
@@ -151,7 +193,7 @@ export default function VehicleBookings() {
             <option value="CANCELLED">Cancelled</option>
           </select>
 
-          {bookings.length > 0 && (
+          {role === "ADMIN" && bookings.length > 0 && (
             <button
               type="button"
               onClick={exportCSVFile}
@@ -174,6 +216,7 @@ export default function VehicleBookings() {
                 booking={b}
                 role={role}
                 refresh={fetchBookings}
+                amountPaid={paymentMap[b._id]}
               />
             ))}
           </div>
@@ -217,11 +260,7 @@ export default function VehicleBookings() {
   );
 }
 
-/* =========================
-   BOOKING CARD
-========================= */
-
-function BookingCard({ booking, role, refresh }) {
+function BookingCard({ booking, role, refresh, amountPaid }) {
   const { vehicle, renter, startDate, endDate, status, _id } = booking;
   const [open, setOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -342,6 +381,12 @@ function BookingCard({ booking, role, refresh }) {
                 <p className="font-medium mb-1">Renter Details</p>
                 <p>Name: {renter.name}</p>
                 <p className="break-all">Email: {renter.email}</p>
+
+                {amountPaid !== undefined && (
+                  <p className="mt-2 font-semibold text-green-700">
+                    Amount Paid: ₹{amountPaid.toLocaleString()}
+                  </p>
+                )}
               </div>
             )}
 
@@ -392,17 +437,14 @@ function BookingCard({ booking, role, refresh }) {
         onCancel={() => setShowModifyModal(false)}
         onConfirm={confirmModify}
       />
+
       <ConfirmModal
         open={messageModal.open}
         title={messageModal.title}
         description={messageModal.description}
         confirmText="OK"
-        onConfirm={() =>
-          setMessageModal({ ...messageModal, open: false })
-        }
-        onCancel={() =>
-          setMessageModal({ ...messageModal, open: false })
-        }
+        onConfirm={() => setMessageModal({ ...messageModal, open: false })}
+        onCancel={() => setMessageModal({ ...messageModal, open: false })}
       />
     </>
   );

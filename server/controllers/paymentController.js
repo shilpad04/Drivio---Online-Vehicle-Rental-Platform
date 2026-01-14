@@ -15,6 +15,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+// PREPARE PAYMENT
 exports.preparePayment = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -23,7 +24,7 @@ exports.preparePayment = async (req, res) => {
 
     const { vehicleId, startDate, endDate } = req.body;
 
-    if (new Date(startDate) >= new Date(endDate)) {
+    if (new Date(startDate) > new Date(endDate)) {
       return res.status(400).json({ message: "Invalid date range" });
     }
 
@@ -45,9 +46,14 @@ exports.preparePayment = async (req, res) => {
         .json({ message: "Vehicle already booked for selected dates" });
     }
 
-    const days =
-      (new Date(endDate) - new Date(startDate)) /
-      (1000 * 60 * 60 * 24);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const diffInMs = end - start;
+    const days = diffInMs / (1000 * 60 * 60 * 24) + 1;
 
     const totalAmount = days * vehicle.pricePerDay;
 
@@ -68,6 +74,7 @@ exports.preparePayment = async (req, res) => {
   }
 };
 
+// CREATE RAZORPAY ORDER
 exports.createRazorpayOrder = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -104,6 +111,7 @@ exports.createRazorpayOrder = async (req, res) => {
   }
 };
 
+// VERIFY PAYMENT
 exports.verifyPayment = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -135,6 +143,24 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ message: "Payment verification failed" });
     }
 
+    const overlapping = await Booking.findOne({
+      vehicle: vehicleId,
+      status: "ACTIVE",
+      startDate: { $lte: new Date(endDate) },
+      endDate: { $gte: new Date(startDate) },
+    });
+
+    if (overlapping) {
+      await Payment.findOneAndUpdate(
+        { razorpayOrderId: razorpay_order_id },
+        { status: "FAILED" }
+      );
+
+      return res.status(400).json({
+        message: "Vehicle already booked for selected dates",
+      });
+    }
+
     await Payment.findOneAndUpdate(
       { razorpayOrderId: razorpay_order_id },
       {
@@ -151,6 +177,11 @@ exports.verifyPayment = async (req, res) => {
       endDate,
       status: "ACTIVE",
     });
+
+    await Payment.findOneAndUpdate(
+      { razorpayOrderId: razorpay_order_id },
+      { booking: booking._id }
+    );
 
     const renter = await User.findById(req.user.id);
     const vehicle = await Vehicle.findById(vehicleId);
@@ -170,21 +201,16 @@ exports.verifyPayment = async (req, res) => {
   }
 };
 
+// GET MY PAYMENTS (RENTER)
 exports.getMyPayments = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    if (!req.user.id) {
-      return res.status(401).json({ message: "Invalid user context" });
-    }
-
     const { status, vehicleId, startDate, endDate, search } = req.query;
 
-    const query = {
-      renter: req.user.id,
-    };
+    const query = { renter: req.user.id };
 
     if (status) query.status = status;
     if (vehicleId) query.vehicle = vehicleId;
@@ -213,6 +239,7 @@ exports.getMyPayments = async (req, res) => {
   }
 };
 
+// ADMIN PAYMENTS
 exports.getAllPaymentsAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -220,7 +247,6 @@ exports.getAllPaymentsAdmin = async (req, res) => {
     }
 
     const { status, vehicleId, renterId, startDate, endDate } = req.query;
-
     const query = {};
 
     if (status) query.status = status;
@@ -243,3 +269,35 @@ exports.getAllPaymentsAdmin = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch payments" });
   }
 };
+
+// OWNER PAYMENTS
+exports.getOwnerPayments = async (req, res) => {
+  try {
+    if (req.user.role !== "OWNER") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const vehicles = await Vehicle.find({ ownerId: req.user.id }).select("_id");
+    const vehicleIds = vehicles.map((v) => v._id);
+
+    if (vehicleIds.length === 0) {
+      return res.json([]);
+    }
+
+    const payments = await Payment.find({
+      vehicle: { $in: vehicleIds },
+      status: "SUCCESS",
+      booking: { $ne: null },
+    })
+      .populate("booking", "_id")
+      .populate("renter", "name email")
+      .populate("vehicle", "make model")
+      .sort({ createdAt: -1 });
+
+    res.json(payments);
+  } catch (error) {
+    console.error("Owner payments error:", error);
+    res.status(500).json({ message: "Failed to fetch owner payments" });
+  }
+};
+

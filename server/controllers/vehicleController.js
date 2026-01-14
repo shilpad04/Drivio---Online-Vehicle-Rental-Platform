@@ -1,8 +1,10 @@
 const Vehicle = require("../models/Vehicle");
 
-/* =====================================================
-   PUBLIC / RENTER – Get approved vehicles with filters
-===================================================== */
+// =====================
+// PUBLIC / RENTER
+// =====================
+
+// Get approved vehicles with filters
 exports.getApprovedVehicles = async (req, res) => {
   try {
     const {
@@ -17,7 +19,6 @@ exports.getApprovedVehicles = async (req, res) => {
 
     const query = { status: "approved" };
 
-    // Search by make / model
     if (search) {
       query.$or = [
         { make: new RegExp(search, "i") },
@@ -30,7 +31,7 @@ exports.getApprovedVehicles = async (req, res) => {
     if (fuelType) query.fuelType = fuelType;
 
     if (location) {
-      query.location = new RegExp(location, "i");
+      query.location = new RegExp(`^${location}$`, "i");
     }
 
     if (minPrice || maxPrice) {
@@ -47,9 +48,65 @@ exports.getApprovedVehicles = async (req, res) => {
   }
 };
 
-/* =====================================================
-   PUBLIC / RENTER – Get single approved vehicle
-===================================================== */
+// ✅ NORMALIZED & DEDUPLICATED LOCATIONS
+exports.getVehicleLocations = async (req, res) => {
+  try {
+    const locations = await Vehicle.aggregate([
+      {
+        $match: {
+          status: "approved",
+          location: { $exists: true, $ne: "" },
+        },
+      },
+      {
+        $project: {
+          location: {
+            $trim: { input: "$location" },
+          },
+        },
+      },
+      {
+        $project: {
+          normalized: {
+            $concat: [
+              { $toUpper: { $substrCP: ["$location", 0, 1] } },
+              {
+                $toLower: {
+                  $substrCP: [
+                    "$location",
+                    1,
+                    { $subtract: [{ $strLenCP: "$location" }, 1] },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$normalized",
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+      {
+        $project: {
+          _id: 0,
+          location: "$_id",
+        },
+      },
+    ]);
+
+    res.json(locations.map((l) => l.location));
+  } catch (error) {
+    console.error("Get vehicle locations error:", error);
+    res.status(500).json({ message: "Failed to fetch locations" });
+  }
+};
+
+// Get single approved vehicle
 exports.getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findOne({
@@ -68,9 +125,10 @@ exports.getVehicleById = async (req, res) => {
   }
 };
 
-/* =====================================================
-   OWNER – Add vehicle (pending by default)
-===================================================== */
+// =====================
+// OWNER
+// =====================
+
 exports.addVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {
@@ -90,33 +148,51 @@ exports.addVehicle = async (req, res) => {
   }
 };
 
-/* =====================================================
-   OWNER – Get my vehicles (all statuses)
-===================================================== */
 exports.getMyVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({
-      ownerId: req.user.id,
-    }).sort({ createdAt: -1 });
+    const { search, category, status } = req.query;
+    const query = { ownerId: req.user.id };
 
+    if (status) query.status = status;
+
+    if (search) {
+      query.$or = [
+        { make: new RegExp(search, "i") },
+        { model: new RegExp(search, "i") },
+      ];
+    }
+
+    if (category) query.category = category;
+
+    const vehicles = await Vehicle.find(query).sort({ createdAt: -1 });
     res.json(vehicles);
   } catch (error) {
     console.error("Get my vehicles error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch vehicles" });
   }
 };
 
-/* =====================================================
-   ADMIN – Get all vehicles
-===================================================== */
+// =====================
+// ADMIN
+// =====================
+
 exports.getAllVehiclesForAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Access denied" });
     }
 
+    const { status, search } = req.query;
     const query = {};
-    if (req.query.status) query.status = req.query.status;
+
+    if (status) query.status = status;
+
+    if (search) {
+      query.$or = [
+        { make: new RegExp(search, "i") },
+        { model: new RegExp(search, "i") },
+      ];
+    }
 
     const vehicles = await Vehicle.find(query)
       .populate("ownerId", "name email")
@@ -129,9 +205,6 @@ exports.getAllVehiclesForAdmin = async (req, res) => {
   }
 };
 
-/* =====================================================
-   ADMIN – Approve vehicle
-===================================================== */
 exports.approveVehicle = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -151,9 +224,6 @@ exports.approveVehicle = async (req, res) => {
   }
 };
 
-/* =====================================================
-   ADMIN – Reject vehicle
-===================================================== */
 exports.rejectVehicle = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -173,9 +243,10 @@ exports.rejectVehicle = async (req, res) => {
   }
 };
 
-/* =====================================================
-   OWNER – Update vehicle (STRICT RULES)
-===================================================== */
+// =====================
+// OWNER ACTIONS
+// =====================
+
 exports.updateVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {
@@ -194,7 +265,6 @@ exports.updateVehicle = async (req, res) => {
 
     const updates = {};
 
-    // ✅ KM can ALWAYS be updated
     if (
       req.body.kilometersDriven !== undefined &&
       !isNaN(req.body.kilometersDriven)
@@ -202,12 +272,10 @@ exports.updateVehicle = async (req, res) => {
       updates.kilometersDriven = Number(req.body.kilometersDriven);
     }
 
-    // ✅ Only if NOT approved
     if (vehicle.status !== "approved") {
       if (req.body.pricePerDay !== undefined && !isNaN(req.body.pricePerDay)) {
         updates.pricePerDay = Number(req.body.pricePerDay);
       }
-
       if (req.body.location) updates.location = req.body.location;
       if (req.body.description) updates.description = req.body.description;
       if (req.body.fuelType) updates.fuelType = req.body.fuelType;
@@ -215,10 +283,12 @@ exports.updateVehicle = async (req, res) => {
       if (req.body.vehicleType) updates.vehicleType = req.body.vehicleType;
     }
 
+    if (vehicle.status === "rejected" && req.body.status === "pending") {
+      updates.status = "pending";
+    }
+
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({
-        message: "No valid fields to update",
-      });
+      return res.status(400).json({ message: "No valid fields to update" });
     }
 
     Object.assign(vehicle, updates);
@@ -231,9 +301,6 @@ exports.updateVehicle = async (req, res) => {
   }
 };
 
-/* =====================================================
-   OWNER – Delete vehicle
-===================================================== */
 exports.deleteVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {

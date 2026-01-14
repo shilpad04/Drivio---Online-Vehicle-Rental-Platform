@@ -39,9 +39,7 @@ export default function VehicleCard({ vehicle }) {
     navigate(`/vehicles/${vehicle._id}`);
   };
 
-  /* ===============================
-     OWNER ACTIONS
-  =============================== */
+  // OWNER ACTIONS
   const handleEdit = (e) => {
     e.stopPropagation();
     navigate(`/dashboard/owner/vehicles/${vehicle._id}/edit`);
@@ -51,7 +49,7 @@ export default function VehicleCard({ vehicle }) {
     try {
       setDeleting(true);
       await api.delete(`/vehicles/${vehicle._id}`);
-      window.location.reload(); // minimal, non-breaking refresh
+      window.location.reload();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete vehicle");
     } finally {
@@ -118,7 +116,7 @@ export default function VehicleCard({ vehicle }) {
           </button>
         )}
 
-        {/* OWNER ACTIONS - BIG BUTTONS */}
+        {/* OWNER ACTIONS*/}
         {isOwner && (
           <div className="mt-4 flex gap-3">
             <button

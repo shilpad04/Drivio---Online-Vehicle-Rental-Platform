@@ -2,14 +2,12 @@ export default function About() {
   return (
     <section className="pt-32 pb-20 bg-gray-100 min-h-screen">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Page Header */}
         <h1 className="text-4xl font-bold text-gray-900 mb-10">
           About Us
         </h1>
 
-        {/* Intro Box */}
-        <div className="bg-black text-white rounded-xl p-10 mb-16">
-          <p className="text-gray-300 max-w-3xl">
+        <div className="bg-black text-white rounded-xl p-10 mb-16 text-center flex justify-center">
+          <p className="text-gray-300 max-w-3xl font-medium">
             Drivio brings vehicle owners and renters together in a simple,
             safe, and reliable way. Whether you’re listing a vehicle or
             booking one, everything is designed to feel easy and worry-free.

@@ -3,9 +3,7 @@ import api from "./axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-/* ===========================
-   PUBLIC
-=========================== */
+//  PUBLIC
 
 export const getApprovedVehicles = async (params = {}) => {
   const response = await axios.get(`${API_BASE_URL}/api/vehicles`, {
@@ -21,9 +19,7 @@ export const getVehicleById = async (id) => {
   return response.data;
 };
 
-/* ===========================
-   OWNER
-=========================== */
+//  OWNER
 
 export const addVehicle = async (vehicleData) => {
   const response = await api.post("/vehicles", vehicleData);
@@ -35,9 +31,7 @@ export const getMyVehicles = async () => {
   return response.data;
 };
 
-/* ===========================
-   ADMIN
-=========================== */
+// ADMIN
 
 export const approveVehicle = async (id) => {
   const response = await api.put(`/vehicles/${id}/approve`);

@@ -25,14 +25,14 @@ export default function OwnerDashboard() {
         <h1 className="text-2xl font-bold">Owner Dashboard</h1>
 
         <Link
-          to="/owner/add-vehicle"
+          to="/dashboard/owner/vehicles/add"
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
         >
           + Add Vehicle
         </Link>
       </div>
 
-      {/* Tiles sorted alphabetically */}
+      {/* Tiles */}
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardTile
           title="Analytics"

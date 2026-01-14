@@ -5,6 +5,7 @@ import Reviews from "../components/Reviews";
 import { paginate } from "../utils/pagination";
 import StatusBadge from "../components/StatusBadge";
 import BackButton from "../components/BackButton";
+import { formatDate } from "../utils/formatDate";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,21 +19,28 @@ export default function RentalHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   useEffect(() => {
     fetchRentalHistory();
   }, []);
 
-
   useEffect(() => {
-    if (!rentals.length) {
+    const filtered =
+      statusFilter === "ALL"
+        ? rentals
+        : rentals.filter(
+            (r) => String(r.status).toUpperCase().trim() === statusFilter
+          );
+
+    if (!filtered.length) {
       setPaginatedRentals([]);
       setTotalPages(1);
       return;
     }
 
     const { totalPages, paginatedItems } = paginate(
-      rentals,
+      filtered,
       currentPage,
       ITEMS_PER_PAGE
     );
@@ -44,7 +52,7 @@ export default function RentalHistory() {
 
     setPaginatedRentals(paginatedItems);
     setTotalPages(totalPages);
-  }, [rentals, currentPage]);
+  }, [rentals, currentPage, statusFilter]);
 
   const fetchRentalHistory = async () => {
     try {
@@ -52,10 +60,12 @@ export default function RentalHistory() {
 
       const res = await api.get("/bookings/my");
 
-      const history = (res.data || []).filter(
-        (b) =>
-          (b.status === "COMPLETED" || b.status === "CANCELLED") && b.vehicle
-      );
+      const history = (res.data || []).filter((b) => {
+        const status = String(b.status).toUpperCase().trim();
+        return (
+          (status === "COMPLETED" || status === "CANCELLED") && b.vehicle
+        );
+      });
 
       setRentals(history);
       setCurrentPage(1);
@@ -66,66 +76,37 @@ export default function RentalHistory() {
     }
   };
 
-  const exportCSV = () => {
-    if (!rentals.length) return;
-
-    const headers = ["Vehicle", "Start Date", "End Date", "Status"];
-
-    const rows = rentals.map((r) => [
-      `${r.vehicle?.make || ""} ${r.vehicle?.model || ""}`,
-      formatDate(r.startDate),
-      formatDate(r.endDate),
-      r.status,
-    ]);
-
-    const csv =
-      headers.join(",") +
-      "\n" +
-      rows
-        .map((row) =>
-          row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
-        )
-        .join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "rental-history.csv";
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 100);
-  };
-
   if (loading) {
     return <div className="min-h-screen pt-32 text-center">Loading…</div>;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen pt-32 text-center text-red-600">{error}</div>
+      <div className="min-h-screen pt-32 text-center text-red-600">
+        {error}
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen pt-24 pb-24 px-6 max-w-7xl mx-auto">
       <BackButton to="/dashboard/renter" />
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-bold">Rental History</h1>
 
-        {rentals.length > 0 && (
-          <button
-            onClick={exportCSV}
-            className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-          >
-            Export CSV
-          </button>
-        )}
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border rounded px-4 py-2 text-sm"
+        >
+          <option value="ALL">All</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
       </div>
 
       {paginatedRentals.length === 0 ? (
@@ -141,11 +122,11 @@ export default function RentalHistory() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-10">
+            <div className="flex justify-center gap-2 mt-10">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+                className="px-3 py-1 border rounded disabled:opacity-40"
               >
                 Prev
               </button>
@@ -154,10 +135,10 @@ export default function RentalHistory() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 text-sm border rounded ${
+                  className={`px-3 py-1 border rounded ${
                     currentPage === i + 1
                       ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-100"
+                      : ""
                   }`}
                 >
                   {i + 1}
@@ -167,7 +148,7 @@ export default function RentalHistory() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+                className="px-3 py-1 border rounded disabled:opacity-40"
               >
                 Next
               </button>
@@ -186,7 +167,9 @@ function RentalCard({ rental }) {
 
   if (!vehicle) return null;
 
-  const isCancelled = status === "CANCELLED";
+  const normalizedStatus = String(status).toUpperCase().trim();
+  const isCancelled = normalizedStatus === "CANCELLED";
+  const isCompleted = normalizedStatus === "COMPLETED";
 
   return (
     <div
@@ -219,7 +202,7 @@ function RentalCard({ rental }) {
           </p>
 
           <div className="mt-3">
-            <StatusBadge status={status} />
+            <StatusBadge status={normalizedStatus} />
           </div>
         </div>
       </div>
@@ -238,28 +221,34 @@ function RentalCard({ rental }) {
 
           <button
             onClick={() => navigate(`/vehicles/${vehicle._id}`)}
-            className="text-sm text-blue-600 hover:underline mt-2"
+            className="text-sm text-blue-600 hover:underline"
           >
             🔁 Book this vehicle again
           </button>
         </div>
       )}
 
-      {status === "COMPLETED" && (
-        <div className="pt-4 border-t">
+      {isCompleted && (
+        <div className="pt-4 border-t space-y-4">
+          <div className="bg-gray-50 border rounded-lg p-3 flex justify-between items-center text-sm">
+            <div>
+              <p className="font-medium">Payment Completed</p>
+              <p className="text-xs text-gray-500">
+                Invoice available in Payments section
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigate("/dashboard/renter/payments")}
+              className="text-blue-600 hover:underline"
+            >
+              View Payment
+            </button>
+          </div>
+
           <Reviews vehicleId={vehicle._id} bookingId={_id} singleReview />
         </div>
       )}
     </div>
   );
-}
-
-<StatusBadge status={status} />;
-
-function formatDate(date) {
-  return new Date(date).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }

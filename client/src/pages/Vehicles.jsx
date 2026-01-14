@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axios";
 import VehicleCard from "../components/VehicleCard";
 import { useAuth } from "../context/AuthContext";
@@ -8,9 +8,10 @@ import { paginate } from "../utils/pagination";
 
 const ITEMS_PER_PAGE = 6;
 
-export default function Vehicles({ searchQuery }) {
+export default function Vehicles({ searchQuery, locationQuery }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isAdmin = user?.role === "ADMIN";
   const isOwner = user?.role === "OWNER";
@@ -28,26 +29,53 @@ export default function Vehicles({ searchQuery }) {
   const [maxPrice, setMaxPrice] = useState("");
   const [fuelType, setFuelType] = useState("");
 
+  const [adminSearch, setAdminSearch] = useState("");
+  const [ownerSearch, setOwnerSearch] = useState("");
+
+  useEffect(() => {
+    if (locationQuery) {
+      setLocationFilter(locationQuery);
+    }
+  }, [locationQuery]);
+
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         let res;
 
         if (isAdmin) {
-          const query =
-            statusFilter !== "all" ? `?status=${statusFilter}` : "";
-          res = await api.get(`/vehicles/admin/all${query}`);
+          const params = {};
+
+          if (statusFilter !== "all") {
+            params.status = statusFilter;
+          }
+
+          if (adminSearch && adminSearch.trim()) {
+            params.search = adminSearch.trim();
+          }
+
+          res = await api.get("/vehicles/admin/all", { params });
           setVehicles(res.data);
+
         } else if (isOwner) {
-          res = await api.get("/vehicles/my");
+          const params = {};
 
-          const filtered =
-            statusFilter === "all"
-              ? res.data
-              : res.data.filter((v) => v.status === statusFilter);
+          if (statusFilter !== "all") {
+            params.status = statusFilter;
+          }
 
-          setVehicles(filtered);
+          if (ownerSearch && ownerSearch.trim()) {
+            params.search = ownerSearch.trim();
+          }
+
+          res = await api.get("/vehicles/my", { params });
+          setVehicles(res.data);
+
         } else {
+          if (locationQuery && !locationFilter) {
+            return;
+          }
+
           const params = {};
 
           if (searchQuery && searchQuery.trim()) {
@@ -80,12 +108,16 @@ export default function Vehicles({ searchQuery }) {
     isOwner,
     statusFilter,
     searchQuery,
+    adminSearch,
+    ownerSearch,
     vehicleType,
     category,
     locationFilter,
     fuelType,
     minPrice,
     maxPrice,
+    locationQuery,
+    location.state,
   ]);
 
   const handleBack = () => {
@@ -134,7 +166,7 @@ export default function Vehicles({ searchQuery }) {
         />
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold">
           {isAdmin
             ? "All Vehicles"
@@ -142,19 +174,6 @@ export default function Vehicles({ searchQuery }) {
             ? "My Vehicles"
             : "Available Vehicles"}
         </h1>
-
-        {(isAdmin || isOwner) && (
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border rounded px-3 py-2 text-sm"
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        )}
       </div>
 
       {paginatedVehicles.length === 0 ? (
@@ -171,9 +190,7 @@ export default function Vehicles({ searchQuery }) {
         <div className="flex justify-center mt-10 gap-2">
           <button
             disabled={currentPage === 1}
-            onClick={() =>
-              setCurrentPage((p) => Math.max(p - 1, 1))
-            }
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             className="px-3 py-1 border rounded disabled:opacity-40"
           >
             Prev

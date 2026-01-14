@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { addVehicle } from "../api/vehicleApi";
 import ImageUpload from "../components/ImageUpload";
 import ConfirmModal from "../components/ConfirmModal";
+import BackButton from "../components/BackButton";
 
 const inputClass =
   "w-full border border-gray-300 rounded-md px-4 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500";
@@ -108,13 +109,20 @@ export default function AddVehicle() {
         if (form.vehicleType) payload.vehicleType = form.vehicleType;
       }
 
+      if (isEditMode && vehicleStatus === "rejected") {
+        payload.status = "pending";
+      }
+
       if (isEditMode) {
         await api.put(`/vehicles/${id}`, payload);
 
         setMessageModal({
           open: true,
           title: "Vehicle Updated",
-          description: "Vehicle updated successfully.",
+          description:
+            vehicleStatus === "rejected"
+              ? "Vehicle resubmitted for admin approval."
+              : "Vehicle updated successfully.",
         });
       } else {
         await addVehicle({
@@ -144,14 +152,8 @@ export default function AddVehicle() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <button
-        onClick={() => navigate("/dashboard/owner")}
-        className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 mb-6"
-      >
-        <i className="fa-solid fa-arrow-left"></i>
-        Back
-      </button>
+    <div className="max-w-5xl mx-auto px-6 py-8 pt-16">
+      <BackButton to="/dashboard/owner" className="mt-4" />
 
       <h1 className="text-3xl font-bold mb-6">
         {isEditMode ? "Edit Vehicle" : "Add New Vehicle"}

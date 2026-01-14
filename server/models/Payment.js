@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
   {
+    booking: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: null, 
+    },
+
     renter: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

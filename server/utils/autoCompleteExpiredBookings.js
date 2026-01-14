@@ -8,11 +8,12 @@ const {
 } = require("../services/emailService");
 
 async function autoCompleteExpiredBookings() {
-  const now = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const expiredBookings = await Booking.find({
     status: "ACTIVE",
-    endDate: { $lt: now },
+    endDate: { $lt: today },
   });
 
   for (const booking of expiredBookings) {
