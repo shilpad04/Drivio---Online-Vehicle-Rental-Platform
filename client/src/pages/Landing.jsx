@@ -50,7 +50,6 @@ export default function Landing({ locationQuery }) {
 
   return (
     <>
-      {/* HERO SECTION */}
       <section
         className="pt-40 pb-32 bg-cover bg-center"
         style={{
@@ -70,12 +69,22 @@ export default function Landing({ locationQuery }) {
         </div>
       </section>
 
-      {/* FEATURED VEHICLES */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <h2 className="text-3xl font-bold mb-10">
             Featured Vehicles Across Locations
           </h2>
+
+          {loading && (
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-72 rounded-xl bg-gray-200 animate-pulse"
+                />
+              ))}
+            </div>
+          )}
 
           {!loading && vehicles.length > 0 && (
             <div className="grid md:grid-cols-3 gap-6">
@@ -103,14 +112,12 @@ export default function Landing({ locationQuery }) {
         </div>
       </section>
 
-      {/* AUTH MODAL */}
       <AuthModal
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         defaultTab="register"
       />
 
-      {/* OWNER ONLY MODAL */}
       <ConfirmModal
         open={showOwnerOnly}
         title="Access Restricted"
