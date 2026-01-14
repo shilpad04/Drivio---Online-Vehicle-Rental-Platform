@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function VehicleAvailability() {
   const { id } = useParams();
@@ -13,8 +14,8 @@ export default function VehicleAvailability() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  // PREPARE PAYMENT
   useEffect(() => {
     if (!startDate || !endDate) {
       navigate("/vehicles");
@@ -43,7 +44,16 @@ export default function VehicleAvailability() {
     preparePayment();
   }, [id, startDate, endDate, navigate]);
 
-  // START PAYMENT
+  useEffect(() => {
+    if (!showSuccess) return;
+
+    const timer = setTimeout(() => {
+      navigate("/dashboard/renter");
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, [showSuccess, navigate]);
+
   const startPayment = async () => {
     if (!summary) return;
 
@@ -51,7 +61,6 @@ export default function VehicleAvailability() {
       setPaying(true);
       setError("");
 
-      // 1️ Create Razorpay order
       const res = await api.post("/payments/create-order", {
         vehicleId: id,
         amount: summary.totalAmount,
@@ -59,7 +68,6 @@ export default function VehicleAvailability() {
 
       const { orderId, key, currency } = res.data;
 
-      // 2️ Razorpay options
       const options = {
         key,
         amount: summary.totalAmount * 100,
@@ -70,7 +78,6 @@ export default function VehicleAvailability() {
 
         handler: async function (response) {
           try {
-            // 3️ Verify payment
             await api.post("/payments/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -80,7 +87,7 @@ export default function VehicleAvailability() {
               endDate,
             });
 
-            navigate("/dashboard/renter");
+            setShowSuccess(true);
           } catch {
             setError("Payment verification failed");
           }
@@ -176,6 +183,14 @@ export default function VehicleAvailability() {
             : "Pay with Razorpay"}
         </button>
       </div>
+
+      <ConfirmModal
+        open={showSuccess}
+        title="Booking Confirmed 🎉"
+        description="Your booking has been confirmed successfully. "
+        confirmText="Go To Dashboard"
+        onConfirm={() => navigate("/dashboard/renter")}
+      />
     </div>
   );
 }
