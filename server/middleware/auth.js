@@ -37,9 +37,8 @@ module.exports = async (req, res, next) => {
         .json({ message: "Account deactivated" });
     }
 
-    // ✅ FINAL FIX: NORMALIZE ID TO STRING
     req.user = {
-      id: user._id.toString(),   // 🔑 THIS WAS THE ROOT CAUSE
+      id: user._id.toString(),   
       role: user.role,
       name: user.name,
       email: user.email,

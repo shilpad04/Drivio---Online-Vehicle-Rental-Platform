@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}/api`,
 });
 
-// Attach token automatically
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -13,7 +13,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors safely
 api.interceptors.response.use(
   (response) => response,
   (error) => {

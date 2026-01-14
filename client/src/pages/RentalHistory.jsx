@@ -246,6 +246,13 @@ function RentalCard({ rental }) {
             </button>
           </div>
 
+          <button
+            onClick={() => navigate(`/vehicles/${vehicle._id}`)}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            🔁 Book this vehicle again
+          </button>
+
           <Reviews vehicleId={vehicle._id} bookingId={_id} singleReview />
         </div>
       )}

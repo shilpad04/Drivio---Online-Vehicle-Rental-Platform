@@ -143,7 +143,7 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
-// OWNER – GET BOOKINGS FOR MY VEHICLES (NO PAYMENT LOGIC)
+// OWNER – GET BOOKINGS FOR MY VEHICLES 
 exports.getOwnerBookings = async (req, res) => {
   try {
     await autoCompleteExpiredBookings();

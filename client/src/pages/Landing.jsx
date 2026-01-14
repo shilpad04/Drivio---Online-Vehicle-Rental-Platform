@@ -26,15 +26,12 @@ export default function Landing({ locationQuery }) {
         setLoading(false);
       }
     };
+
     fetchVehicles();
   }, []);
 
   const handleExplore = () => {
-    if (locationQuery) {
-      navigate(`/vehicles?location=${encodeURIComponent(locationQuery)}`);
-    } else {
-      navigate("/vehicles");
-    }
+    navigate("/vehicles");
   };
 
   const handleListVehicle = () => {
@@ -42,16 +39,18 @@ export default function Landing({ locationQuery }) {
       setShowAuth(true);
       return;
     }
-    if (user.role !== "owner") {
+
+    if (user.role !== "OWNER") {
       setShowOwnerOnly(true);
       return;
     }
+
     navigate("/dashboard/owner");
   };
 
   return (
     <>
-      {/* HERO */}
+      {/* HERO SECTION */}
       <section
         className="pt-40 pb-32 bg-cover bg-center"
         style={{
@@ -71,10 +70,12 @@ export default function Landing({ locationQuery }) {
         </div>
       </section>
 
-      {/* VEHICLES */}
+      {/* FEATURED VEHICLES */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-10">Popular Vehicles</h2>
+          <h2 className="text-3xl font-bold mb-10">
+            Featured Vehicles Across Locations
+          </h2>
 
           {!loading && vehicles.length > 0 && (
             <div className="grid md:grid-cols-3 gap-6">
@@ -102,12 +103,14 @@ export default function Landing({ locationQuery }) {
         </div>
       </section>
 
+      {/* AUTH MODAL */}
       <AuthModal
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         defaultTab="register"
       />
 
+      {/* OWNER ONLY MODAL */}
       <ConfirmModal
         open={showOwnerOnly}
         title="Access Restricted"

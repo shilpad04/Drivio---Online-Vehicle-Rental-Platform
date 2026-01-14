@@ -1,146 +1,41 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import api from "../api/axios";
-import ConfirmModal from "../components/ConfirmModal";
-import { paginate } from "../utils/pagination";
-import { exportCSV } from "../utils/exportCSV";
-import StatusBadge from "../components/StatusBadge";
 import BackButton from "../components/BackButton";
+import StatusBadge from "../components/StatusBadge";
+import { paginate } from "../utils/pagination";
 import { formatDate } from "../utils/formatDate";
+import BookingCard from "../components/BookingCard";
+import useVehicleBookings from "../hooks/useVehicleBookings";
 
 const ITEMS_PER_PAGE = 5;
 
 export default function VehicleBookings() {
   const { user } = useAuth();
   const role = user?.role;
-  const location = useLocation();
   const navigate = useNavigate();
 
-  const isRenterHistory =
-    role === "RENTER" &&
-    location.pathname.includes("/dashboard/renter/rentals");
-
-  const [bookings, setBookings] = useState([]);
-  const [paymentMap, setPaymentMap] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchBookings();
-  }, [role, location.pathname, debouncedSearch]);
-
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-
-      let url = "";
-      if (role === "RENTER") url = "/bookings/my";
-      if (role === "OWNER") url = "/bookings/view/owner";
-      if (role === "ADMIN") url = "/bookings/view/admin";
-
-      const params = {};
-      if (debouncedSearch) params.search = debouncedSearch;
-
-      const res = await api.get(url, { params });
-      let data = res.data || [];
-
-      if (isRenterHistory) {
-        data = data.filter((b) => b.status === "COMPLETED");
-      }
-
-      setBookings(data);
-
-      if (role === "OWNER") {
-        try {
-          const paymentRes = await api.get("/payments/owner");
-          const map = {};
-
-          paymentRes.data.forEach((p) => {
-            if (!p.amount || !p.booking) return;
-
-            const bookingId =
-              typeof p.booking === "object"
-                ? p.booking._id?.toString()
-                : p.booking.toString();
-
-            if (bookingId) {
-              map[bookingId] = p.amount;
-            }
-          });
-
-          setPaymentMap(map);
-        } catch (err) {
-          console.warn("Owner payments failed to load");
-          setPaymentMap({});
-        }
-      }
-    } catch {
-      setError("Failed to load bookings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredBookings =
-    statusFilter === "ALL"
-      ? bookings
-      : bookings.filter((b) => b.status === statusFilter);
-
-  const { totalPages, paginatedItems: paginatedBookings } = paginate(
-    filteredBookings,
+  const {
+    bookings,
+    paymentMap,
+    loading,
+    error,
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
     currentPage,
-    ITEMS_PER_PAGE
-  );
+    setCurrentPage,
+    totalPages,
+    paginatedBookings,
+    isRenterHistory,
+    exportCSVFile,
+    refreshBookings,
+  } = useVehicleBookings(ITEMS_PER_PAGE);
 
   const goBackToDashboard = () => {
     if (role === "RENTER") navigate("/dashboard/renter");
     if (role === "OWNER") navigate("/dashboard/owner");
     if (role === "ADMIN") navigate("/dashboard/admin");
-  };
-
-  const exportCSVFile = () => {
-    if (role !== "ADMIN") return;
-
-    const headers = [
-      "Vehicle",
-      "Fuel Type",
-      "Kilometers Driven",
-      "Start Date",
-      "End Date",
-      "Status",
-      "Renter Name",
-      "Renter Email",
-    ];
-
-    const rows = bookings.map((b) => [
-      `${b.vehicle?.make || ""} ${b.vehicle?.model || ""}`,
-      b.vehicle?.fuelType || "",
-      b.vehicle?.kilometersDriven ?? "",
-      formatDate(b.startDate),
-      formatDate(b.endDate),
-      b.status,
-      b.renter?.name || "",
-      b.renter?.email || "",
-    ]);
-
-    exportCSV({
-      headers,
-      rows,
-      fileName: "bookings-admin.csv",
-    });
   };
 
   if (loading) {
@@ -215,7 +110,7 @@ export default function VehicleBookings() {
                 key={b._id}
                 booking={b}
                 role={role}
-                refresh={fetchBookings}
+                refresh={refreshBookings}
                 amountPaid={paymentMap[b._id]}
               />
             ))}
@@ -257,195 +152,5 @@ export default function VehicleBookings() {
         </>
       )}
     </div>
-  );
-}
-
-function BookingCard({ booking, role, refresh, amountPaid }) {
-  const { vehicle, renter, startDate, endDate, status, _id } = booking;
-  const [open, setOpen] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showModifyModal, setShowModifyModal] = useState(false);
-
-  const [messageModal, setMessageModal] = useState({
-    open: false,
-    title: "",
-    description: "",
-  });
-
-  const navigate = useNavigate();
-
-  const confirmCancel = async () => {
-    try {
-      setCancelling(true);
-      await api.put(`/bookings/${_id}/cancel`);
-      setShowCancelModal(false);
-      refresh();
-    } catch {
-      setMessageModal({
-        open: true,
-        title: "Cancellation Failed",
-        description: "Failed to cancel booking. Please try again.",
-      });
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  const confirmModify = async () => {
-    try {
-      setCancelling(true);
-      await api.put(`/bookings/${_id}/cancel`);
-      setShowModifyModal(false);
-      navigate(`/vehicles/${vehicle._id}`);
-    } catch {
-      setMessageModal({
-        open: true,
-        title: "Action Failed",
-        description: "Unable to modify booking. Please try again.",
-      });
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  return (
-    <>
-      <div
-        onClick={() => setOpen(!open)}
-        className="bg-white rounded-xl shadow cursor-pointer"
-      >
-        <div className="p-5 flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-60 aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden">
-            {vehicle?.images?.[0] ? (
-              <img
-                src={vehicle.images[0]}
-                className="w-full h-full object-cover"
-                alt=""
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold">
-              {vehicle?.make} {vehicle?.model}
-            </h2>
-
-            <p className="text-sm text-gray-600 mt-1">
-              {formatDate(startDate)} → {formatDate(endDate)}
-            </p>
-
-            <div className="mt-3">
-              <StatusBadge status={status} />
-            </div>
-
-            <p className="text-sm text-blue-600 mt-3">
-              {open ? "Hide details ▲" : "View details ▼"}
-            </p>
-          </div>
-        </div>
-
-        {open && (
-          <div className="border-t bg-gray-50 px-6 py-5 space-y-3 text-sm">
-            {vehicle?.location && (
-              <p>
-                <strong>Location:</strong> {vehicle.location}
-              </p>
-            )}
-
-            {vehicle?.category && (
-              <p>
-                <strong>Category:</strong> {vehicle.category}
-              </p>
-            )}
-
-            {vehicle?.fuelType && (
-              <p>
-                <strong>Fuel Type:</strong> {vehicle.fuelType}
-              </p>
-            )}
-
-            {vehicle?.kilometersDriven !== undefined && (
-              <p>
-                <strong>Kilometers Driven:</strong>{" "}
-                {vehicle.kilometersDriven.toLocaleString()} km
-              </p>
-            )}
-
-            {(role === "OWNER" || role === "ADMIN") && renter && (
-              <div className="pt-3 border-t">
-                <p className="font-medium mb-1">Renter Details</p>
-                <p>Name: {renter.name}</p>
-                <p className="break-all">Email: {renter.email}</p>
-
-                {amountPaid !== undefined && (
-                  <p className="mt-2 font-semibold text-green-700">
-                    Amount Paid: ₹{amountPaid.toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {role === "RENTER" && status === "ACTIVE" && (
-              <div className="pt-4 border-t flex gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowModifyModal(true);
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                >
-                  Modify Booking
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCancelModal(true);
-                  }}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg"
-                >
-                  Cancel Booking
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <ConfirmModal
-        open={showCancelModal}
-        title="Cancel booking?"
-        description="This booking will be cancelled and cannot be undone."
-        confirmText="Yes, Cancel"
-        danger
-        loading={cancelling}
-        onCancel={() => setShowCancelModal(false)}
-        onConfirm={confirmCancel}
-      />
-
-      <ConfirmModal
-        open={showModifyModal}
-        title="Modify booking?"
-        description="This will cancel your current booking. You’ll need to rebook and pay again."
-        confirmText="Yes, Continue"
-        loading={cancelling}
-        onCancel={() => setShowModifyModal(false)}
-        onConfirm={confirmModify}
-      />
-
-      <ConfirmModal
-        open={messageModal.open}
-        title={messageModal.title}
-        description={messageModal.description}
-        confirmText="OK"
-        onConfirm={() => setMessageModal({ ...messageModal, open: false })}
-        onCancel={() => setMessageModal({ ...messageModal, open: false })}
-      />
-    </>
   );
 }
