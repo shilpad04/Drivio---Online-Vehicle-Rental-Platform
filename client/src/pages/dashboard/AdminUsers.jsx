@@ -19,11 +19,10 @@ export default function AdminUsers() {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
     }, 400);
-
     return () => clearTimeout(timer);
   }, [search]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (user?.role === "ADMIN") {
       fetchUsers();
     }
@@ -32,7 +31,6 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-
       const params = {};
       if (debouncedSearch) params.search = debouncedSearch;
       if (role) params.role = role;
@@ -60,6 +58,7 @@ export default function AdminUsers() {
     <div className="min-h-screen pt-32 pb-24 px-6 max-w-7xl mx-auto">
       <BackButton to="/dashboard/admin" />
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
+
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <input
           type="text"
@@ -82,21 +81,30 @@ export default function AdminUsers() {
       </div>
 
       <div className="overflow-x-auto bg-white rounded-xl shadow">
+        <p className="text-xs text-gray-500 mb-2 md:hidden px-4 pt-3">
+          Swipe horizontally to view all details →
+        </p>
+
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
               <th className="px-4 py-3 text-left">Name</th>
               <th className="px-4 py-3 text-left">Email</th>
-              <th className="px-4 py-3 text-left">Role</th>
+              <th className="px-4 py-3 text-left hidden sm:table-cell">
+                Role
+              </th>
               <th className="px-4 py-3 text-left">Action</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((u) => (
               <tr key={u._id} className="border-t hover:bg-gray-50">
                 <td className="px-4 py-3">{u.name}</td>
                 <td className="px-4 py-3">{u.email}</td>
-                <td className="px-4 py-3 font-medium">{u.role}</td>
+                <td className="px-4 py-3 font-medium hidden sm:table-cell">
+                  {u.role}
+                </td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() =>
@@ -112,7 +120,10 @@ export default function AdminUsers() {
 
             {users.length === 0 && (
               <tr>
-                <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
+                <td
+                  colSpan="4"
+                  className="px-4 py-6 text-center text-gray-500"
+                >
                   No users found
                 </td>
               </tr>

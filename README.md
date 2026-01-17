@@ -341,4 +341,25 @@ npm run dev
 This approach ensures secure testing without financial risk and mirrors
 real-world production payment workflows.
 
+---
+
+## 🔐 Demo Admin Credentials
+
+For evaluation and testing purposes, the following **demo admin credentials** are provided:
+
+- **Email:** `admin@test.com`
+- **Password:** `admin123`
+
+These credentials allow access to the **Admin Dashboard**, where you can:
+- Approve or reject vehicle listings
+- Manage users
+- View bookings and payments
+- Moderate reviews
+- Handle support inquiries
+
+> **Note:**  
+> These credentials are intended **only for demonstration and evaluation**.  
+> In a production environment, admin access would be secured and credentials
+> would not be publicly exposed.
+
 

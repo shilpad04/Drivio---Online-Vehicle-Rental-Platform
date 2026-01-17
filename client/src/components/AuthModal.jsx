@@ -67,7 +67,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }) {
   );
 }
 
-//  LOGIN FORM 
+/* ================= LOGIN FORM ================= */
 function LoginForm({ onClose }) {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -82,8 +82,17 @@ function LoginForm({ onClose }) {
 
     try {
       const user = await login(email, password);
+
       onClose();
-      redirectByRole(user, navigate);
+
+      // 🔑 IMPORTANT FIX
+      const pendingVehicle = sessionStorage.getItem("pendingBookVehicle");
+
+      if (!pendingVehicle) {
+        redirectByRole(user, navigate);
+      }
+      // else: stay on same page (Vehicle Details)
+
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }
@@ -118,7 +127,7 @@ function LoginForm({ onClose }) {
   );
 }
 
-//  REGISTER FORM 
+/* ================= REGISTER FORM ================= */
 function RegisterForm({ onClose }) {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -138,8 +147,16 @@ function RegisterForm({ onClose }) {
 
     try {
       const user = await register(form);
+
       onClose();
-      redirectByRole(user, navigate);
+
+      // 🔑 SAME FIX FOR REGISTER
+      const pendingVehicle = sessionStorage.getItem("pendingBookVehicle");
+
+      if (!pendingVehicle) {
+        redirectByRole(user, navigate);
+      }
+
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }

@@ -79,6 +79,30 @@ export default function useAddVehicle() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (!isEditMode) {
+      if (
+        !form.make ||
+        !form.model ||
+        !form.year ||
+        !form.vehicleType ||
+        !form.category ||
+        !form.fuelType ||
+        !form.location ||
+        !form.pricePerDay ||
+        !form.kilometersDriven ||
+        images.length === 0
+      ) {
+        setMessageModal({
+          open: true,
+          title: "Missing Required Fields",
+          description:
+            "Please fill all required fields and upload at least one image before submitting.",
+        });
+        return;
+      }
+    }
+
     setShowConfirm(true);
   };
 

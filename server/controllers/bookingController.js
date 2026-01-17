@@ -13,11 +13,11 @@ const autoCompleteExpiredBookings = require("../utils/autoCompleteExpiredBooking
 // CREATE BOOKING (DISABLED)
 exports.createBooking = async (req, res) => {
   return res.status(410).json({
-    message: "Direct booking is disabled",
+    message: "Direct booking is disabled. Booking is created only after payment.",
   });
 };
 
-// CANCEL BOOKING
+// CANCEL BOOKING (RENTER)
 exports.cancelBooking = async (req, res) => {
   try {
     if (req.user.role !== "RENTER") {
@@ -36,8 +36,20 @@ exports.cancelBooking = async (req, res) => {
         .json({ message: "Only active bookings can be cancelled" });
     }
 
-    if (booking.renter.toString() !== req.user.id.toString()) {
+    if (booking.renter.toString() !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const bookingStart = new Date(booking.startDate);
+    bookingStart.setHours(0, 0, 0, 0);
+
+    if (today >= bookingStart) {
+      return res.status(400).json({
+        message: "Booking cannot be cancelled after rental has started",
+      });
     }
 
     booking.status = "CANCELLED";
@@ -46,11 +58,13 @@ exports.cancelBooking = async (req, res) => {
     const renter = await User.findById(booking.renter);
     const vehicle = await Vehicle.findById(booking.vehicle);
 
-    sendBookingCancellationEmail({
-      to: renter.email,
-      booking,
-      vehicle,
-    }).catch(console.error);
+    if (renter && vehicle) {
+      sendBookingCancellationEmail({
+        to: renter.email,
+        booking,
+        vehicle,
+      }).catch(() => {});
+    }
 
     res.json({ message: "Booking cancelled successfully" });
   } catch (error) {
@@ -78,17 +92,19 @@ exports.completeBooking = async (req, res) => {
     const renter = await User.findById(booking.renter);
     const vehicle = await Vehicle.findById(booking.vehicle);
 
-    sendBookingCompletionEmail({
-      to: renter.email,
-      booking,
-      vehicle,
-    }).catch(console.error);
+    if (renter && vehicle) {
+      sendBookingCompletionEmail({
+        to: renter.email,
+        booking,
+        vehicle,
+      }).catch(() => {});
 
-    sendReviewReminderEmail({
-      to: renter.email,
-      booking,
-      vehicle,
-    }).catch(console.error);
+      sendReviewReminderEmail({
+        to: renter.email,
+        booking,
+        vehicle,
+      }).catch(() => {});
+    }
 
     res.json({ message: "Booking marked as completed" });
   } catch (error) {
@@ -112,9 +128,7 @@ exports.getMyBookings = async (req, res) => {
       renter: req.user.id,
     };
 
-    if (status) {
-      query.status = status;
-    }
+    if (status) query.status = status;
 
     if (startDate || endDate) {
       query.startDate = {};
@@ -143,7 +157,7 @@ exports.getMyBookings = async (req, res) => {
   }
 };
 
-// OWNER – GET BOOKINGS FOR MY VEHICLES 
+// OWNER – GET BOOKINGS FOR MY VEHICLES
 exports.getOwnerBookings = async (req, res) => {
   try {
     await autoCompleteExpiredBookings();
@@ -154,7 +168,7 @@ exports.getOwnerBookings = async (req, res) => {
 
     const { search } = req.query;
 
-    const vehicles = await Vehicle.find({ owner: req.user.id }).select("_id");
+    const vehicles = await Vehicle.find({ ownerId: req.user.id }).select("_id");
     const vehicleIds = vehicles.map((v) => v._id);
 
     let bookings = await Booking.find({

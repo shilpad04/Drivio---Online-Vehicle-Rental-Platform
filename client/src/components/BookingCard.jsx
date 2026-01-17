@@ -12,13 +12,16 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showModifyModal, setShowModifyModal] = useState(false);
-  const [messageModal, setMessageModal] = useState({
-    open: false,
-    title: "",
-    description: "",
-  });
 
   const navigate = useNavigate();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const bookingStart = new Date(startDate);
+  bookingStart.setHours(0, 0, 0, 0);
+
+  const hasStarted = today >= bookingStart;
 
   const confirmCancel = async () => {
     try {
@@ -26,12 +29,6 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
       await api.put(`/bookings/${_id}/cancel`);
       setShowCancelModal(false);
       refresh();
-    } catch {
-      setMessageModal({
-        open: true,
-        title: "Cancellation Failed",
-        description: "Failed to cancel booking. Please try again.",
-      });
     } finally {
       setCancelling(false);
     }
@@ -43,12 +40,6 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
       await api.put(`/bookings/${_id}/cancel`);
       setShowModifyModal(false);
       navigate(`/vehicles/${vehicle._id}`);
-    } catch {
-      setMessageModal({
-        open: true,
-        title: "Action Failed",
-        description: "Unable to modify booking. Please try again.",
-      });
     } finally {
       setCancelling(false);
     }
@@ -138,21 +129,31 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
             {role === "RENTER" && status === "ACTIVE" && (
               <div className="pt-4 border-t flex gap-3">
                 <button
+                  disabled={hasStarted}
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowModifyModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  className={`px-4 py-2 rounded-lg text-white ${
+                    hasStarted
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600"
+                  }`}
                 >
                   Modify Booking
                 </button>
 
                 <button
+                  disabled={hasStarted}
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowCancelModal(true);
                   }}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                  className={`px-4 py-2 rounded-lg text-white ${
+                    hasStarted
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-red-600"
+                  }`}
                 >
                   Cancel Booking
                 </button>
@@ -181,15 +182,6 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
         loading={cancelling}
         onCancel={() => setShowModifyModal(false)}
         onConfirm={confirmModify}
-      />
-
-      <ConfirmModal
-        open={messageModal.open}
-        title={messageModal.title}
-        description={messageModal.description}
-        confirmText="OK"
-        onConfirm={() => setMessageModal({ ...messageModal, open: false })}
-        onCancel={() => setMessageModal({ ...messageModal, open: false })}
       />
     </>
   );
