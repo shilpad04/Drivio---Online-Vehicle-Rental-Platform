@@ -9,6 +9,7 @@ const User = require("../models/User");
 const {
   sendBookingConfirmationEmail,
 } = require("../services/emailService");
+const expirePendingPayments = require("../utils/expirePendingPayments");
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -18,6 +19,8 @@ const razorpay = new Razorpay({
 // PREPARE PAYMENT
 exports.preparePayment = async (req, res) => {
   try {
+    expirePendingPayments().catch(() => {});
+
     if (req.user.role !== "RENTER") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -77,6 +80,8 @@ exports.preparePayment = async (req, res) => {
 // CREATE RAZORPAY ORDER
 exports.createRazorpayOrder = async (req, res) => {
   try {
+    expirePendingPayments().catch(() => {});
+
     if (req.user.role !== "RENTER") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -204,6 +209,8 @@ exports.verifyPayment = async (req, res) => {
 // GET MY PAYMENTS (RENTER)
 exports.getMyPayments = async (req, res) => {
   try {
+    expirePendingPayments().catch(() => {});
+
     if (req.user.role !== "RENTER") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -242,6 +249,8 @@ exports.getMyPayments = async (req, res) => {
 // ADMIN PAYMENTS
 exports.getAllPaymentsAdmin = async (req, res) => {
   try {
+    expirePendingPayments().catch(() => {});
+
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -273,6 +282,8 @@ exports.getAllPaymentsAdmin = async (req, res) => {
 // OWNER PAYMENTS
 exports.getOwnerPayments = async (req, res) => {
   try {
+    expirePendingPayments().catch(() => {});
+
     if (req.user.role !== "OWNER") {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -300,4 +311,3 @@ exports.getOwnerPayments = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch owner payments" });
   }
 };
-

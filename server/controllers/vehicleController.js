@@ -1,9 +1,6 @@
 const Vehicle = require("../models/Vehicle");
 
-// =====================
 // PUBLIC / RENTER
-// =====================
-
 // Get approved vehicles with filters
 exports.getApprovedVehicles = async (req, res) => {
   try {
@@ -48,7 +45,6 @@ exports.getApprovedVehicles = async (req, res) => {
   }
 };
 
-// ✅ NORMALIZED & DEDUPLICATED LOCATIONS
 exports.getVehicleLocations = async (req, res) => {
   try {
     const locations = await Vehicle.aggregate([
@@ -112,7 +108,7 @@ exports.getVehicleById = async (req, res) => {
     const vehicle = await Vehicle.findOne({
       _id: req.params.id,
       status: "approved",
-    });
+    }).populate("ownerId", "name");
 
     if (!vehicle) {
       return res.status(404).json({ message: "Vehicle not found" });
@@ -120,15 +116,11 @@ exports.getVehicleById = async (req, res) => {
 
     res.json(vehicle);
   } catch (error) {
-    console.error("Get vehicle by ID error:", error);
     res.status(500).json({ message: "Failed to fetch vehicle" });
   }
 };
 
-// =====================
 // OWNER
-// =====================
-
 exports.addVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {
@@ -148,6 +140,7 @@ exports.addVehicle = async (req, res) => {
   }
 };
 
+// OWNER VEHICLE SEARCH (make / model)
 exports.getMyVehicles = async (req, res) => {
   try {
     const { search, category, status } = req.query;
@@ -172,10 +165,7 @@ exports.getMyVehicles = async (req, res) => {
   }
 };
 
-// =====================
 // ADMIN
-// =====================
-
 exports.getAllVehiclesForAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -243,10 +233,7 @@ exports.rejectVehicle = async (req, res) => {
   }
 };
 
-// =====================
 // OWNER ACTIONS
-// =====================
-
 exports.updateVehicle = async (req, res) => {
   try {
     if (req.user.role !== "OWNER") {

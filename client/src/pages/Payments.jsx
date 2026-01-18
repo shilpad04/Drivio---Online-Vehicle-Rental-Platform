@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getAllPaymentsAdmin, getMyPayments } from "../api/payment";
+import api from "../api/axios"; 
 import InvoiceModal from "../components/InvoiceModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { paginate } from "../utils/pagination";
-import { exportCSV } from "../utils/exportCSV";
 import StatusBadge from "../components/StatusBadge";
 import BackButton from "../components/BackButton";
 import { formatDate } from "../utils/formatDate";
@@ -23,6 +24,10 @@ export default function Payments() {
   const [showInvoice, setShowInvoice] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundTarget, setRefundTarget] = useState(null);
+  const [refunding, setRefunding] = useState(false);
+
   useEffect(() => {
     if (role) fetchPayments();
   }, [role]);
@@ -38,6 +43,33 @@ export default function Payments() {
       setPage(1);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmRefund = async () => {
+    if (!refundTarget) return;
+
+    try {
+      setRefunding(true);
+
+      console.log("➡️ Calling refund API for:", refundTarget._id);
+
+      const res = await api.post(
+        `/admin/payments/${refundTarget._id}/refund`
+      );
+
+      console.log("✅ Refund API success:", res.data);
+
+      setShowRefundModal(false);
+      setRefundTarget(null);
+      fetchPayments();
+    } catch (error) {
+      console.error(
+        "❌ Refund API failed:",
+        error.response?.data || error
+      );
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -67,9 +99,13 @@ export default function Payments() {
             <tr>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Vehicle</th>
+
               {role === "ADMIN" && (
-                <th className="px-4 py-3 hidden md:table-cell">Renter</th>
+                <th className="px-4 py-3 hidden md:table-cell">
+                  Renter
+                </th>
               )}
+
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 hidden md:table-cell">
@@ -88,6 +124,7 @@ export default function Payments() {
                 <td className="px-4 py-3">
                   {formatDate(p.createdAt)}
                 </td>
+
                 <td className="px-4 py-3">
                   {p.vehicle?.make} {p.vehicle?.model}
                 </td>
@@ -101,6 +138,7 @@ export default function Payments() {
                 <td className="px-4 py-3 font-semibold">
                   ₹{p.amount}
                 </td>
+
                 <td className="px-4 py-3">
                   <StatusBadge status={p.status} />
                 </td>
@@ -114,7 +152,7 @@ export default function Payments() {
                 </td>
 
                 <td className="px-4 py-3">
-                  {p.status === "SUCCESS" ? (
+                  {p.status === "SUCCESS" && (
                     <button
                       onClick={() => {
                         setSelectedPayment(p);
@@ -124,9 +162,23 @@ export default function Payments() {
                     >
                       View
                     </button>
-                  ) : (
-                    "-"
                   )}
+
+                  {role === "ADMIN" && p.status === "REFUND_PENDING" && (
+                    <button
+                      onClick={() => {
+                        setRefundTarget(p);
+                        setShowRefundModal(true);
+                      }}
+                      className="ml-3 text-red-600 hover:underline"
+                    >
+                      Refund
+                    </button>
+                  )}
+
+                  {p.status !== "SUCCESS" &&
+                    p.status !== "REFUND_PENDING" &&
+                    "-"}
                 </td>
               </tr>
             ))}
@@ -139,6 +191,21 @@ export default function Payments() {
         onClose={() => setShowInvoice(false)}
         payment={selectedPayment}
         role={role}
+      />
+
+      <ConfirmModal
+        open={showRefundModal}
+        title="Process refund?"
+        description="This will trigger a Razorpay refund. This action cannot be undone."
+        confirmText="Yes, Refund"
+        danger
+        loading={refunding}
+        onCancel={() => {
+          if (refunding) return;
+          setShowRefundModal(false);
+          setRefundTarget(null);
+        }}
+        onConfirm={confirmRefund}
       />
     </div>
   );

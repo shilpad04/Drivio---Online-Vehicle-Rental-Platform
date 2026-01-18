@@ -7,6 +7,11 @@ import StatusBadge from "../components/StatusBadge";
 import BackButton from "../components/BackButton";
 import useVehicleDetails from "../hooks/useVehicleDetails";
 import VehicleImageCarousel from "../components/VehicleImageCarousel";
+import api from "../api/axios"; // ✅ ADDITION (no UI impact)
+
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { useEffect } from "react"; // ✅ ADDITION
 
 export default function VehicleDetails() {
   const navigate = useNavigate();
@@ -37,7 +42,22 @@ export default function VehicleDetails() {
     isOwner,
     isRenter,
     isGuest,
+    isDateBooked,
   } = useVehicleDetails();
+
+
+  useEffect(() => {
+    const failedOrderId = sessionStorage.getItem("failedRazorpayOrderId");
+    if (!failedOrderId) return;
+
+    api
+      .post("/payments/mark-failed", {
+        razorpayOrderId: failedOrderId,
+      })
+      .finally(() => {
+        sessionStorage.removeItem("failedRazorpayOrderId");
+      });
+  }, []);
 
   if (loading) {
     return (
@@ -49,20 +69,107 @@ export default function VehicleDetails() {
 
   if (!vehicle) return null;
 
+  const shouldShowCalendar =
+    typeof isDateBooked === "function" &&
+    vehicle.status === "approved" &&
+    !(isAdmin || isOwner);
+
+  const renderStatus = () => (
+    <div className="mb-4">
+      <span className="text-sm font-medium mr-2">Status:</span>
+      <StatusBadge status={vehicle.status} />
+    </div>
+  );
+
+  const renderVehicleInfo = () => (
+    <div className="mb-6 border rounded-lg p-5 bg-gray-50">
+      <h3 className="text-lg font-semibold mb-4">
+        Vehicle Information
+      </h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <p><span className="font-medium">Vehicle Type:</span> {vehicle.vehicleType}</p>
+        <p><span className="font-medium">Year:</span> {vehicle.year}</p>
+        <p><span className="font-medium">Fuel Type:</span> {vehicle.fuelType}</p>
+        <p><span className="font-medium">Kilometers Driven:</span> {vehicle.kilometersDriven?.toLocaleString()} km</p>
+      </div>
+    </div>
+  );
+
+  const renderOwnerDetails = () => {
+    if (isAdmin && vehicle.ownerId) {
+      return (
+        <div className="mb-6 border rounded-lg p-5 bg-gray-100">
+          <h3 className="text-lg font-semibold mb-3">
+            Owner Details
+          </h3>
+
+          <div className="text-sm space-y-1">
+            <p><span className="font-medium">Name:</span> {vehicle.ownerId.name}</p>
+            <p><span className="font-medium">Email:</span> {vehicle.ownerId.email}</p>
+            <p className="text-xs text-gray-500">
+              Owner ID: {vehicle.ownerId._id}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isAdmin && vehicle.ownerId?.name) {
+      return (
+        <div className="mb-3 text-sm text-gray-600">
+          <span className="font-medium text-gray-800">
+            Owner:
+          </span>{" "}
+          {vehicle.ownerId.name}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const renderCalendar = () => {
+    if (!shouldShowCalendar) return null;
+
+    return (
+      <div className="mt-6 border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
+        <h3 className="text-sm font-semibold text-gray-800 mb-4 text-center">
+          Availability Calendar
+        </h3>
+
+        <div className="flex justify-center">
+          <Calendar
+            tileDisabled={({ date }) => isDateBooked(date)}
+            tileClassName={({ date }) =>
+              isDateBooked(date) ? "booked-date" : null
+            }
+            className="calendar-centered"
+          />
+        </div>
+
+        <div className="mt-4 flex justify-center items-center gap-2 text-xs text-gray-500">
+          <span className="w-3 h-3 bg-red-500 rounded-full inline-block" />
+          <span>Booked dates</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="min-h-screen pt-32 pb-24 px-6 max-w-6xl mx-auto">
         <BackButton />
 
-        <div className="mb-4">
-          <span className="text-sm font-medium mr-2">Status:</span>
-          <StatusBadge status={vehicle.status} />
-        </div>
+        {renderStatus()}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <VehicleImageCarousel images={vehicle.images || []} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+          <div className="flex flex-col">
+            <VehicleImageCarousel images={vehicle.images || []} />
+            {renderCalendar()}
+          </div>
 
-          <div>
+          <div className="flex flex-col">
             <h1 className="text-3xl font-bold mb-2">
               {vehicle.make} {vehicle.model}
             </h1>
@@ -75,43 +182,8 @@ export default function VehicleDetails() {
               ₹{vehicle.pricePerDay} / day
             </div>
 
-            <div className="mb-6 border rounded-lg p-5 bg-gray-50">
-              <h3 className="text-lg font-semibold mb-4">
-                Vehicle Information
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <p><span className="font-medium">Vehicle Type:</span> {vehicle.vehicleType}</p>
-                <p><span className="font-medium">Year:</span> {vehicle.year}</p>
-                <p><span className="font-medium">Fuel Type:</span> {vehicle.fuelType}</p>
-                <p>
-                  <span className="font-medium">Kilometers Driven:</span>{" "}
-                  {vehicle.kilometersDriven?.toLocaleString()} km
-                </p>
-              </div>
-            </div>
-
-            {isAdmin && vehicle.ownerId && (
-              <div className="mb-6 border rounded-lg p-5 bg-gray-100">
-                <h3 className="text-lg font-semibold mb-3">
-                  Owner Details
-                </h3>
-
-                <div className="text-sm space-y-1">
-                  <p>
-                    <span className="font-medium">Name:</span>{" "}
-                    {vehicle.ownerId.name}
-                  </p>
-                  <p>
-                    <span className="font-medium">Email:</span>{" "}
-                    {vehicle.ownerId.email}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Owner ID: {vehicle.ownerId._id}
-                  </p>
-                </div>
-              </div>
-            )}
+            {renderVehicleInfo()}
+            {renderOwnerDetails()}
 
             {vehicle.description && (
               <div className="mb-6">
@@ -167,6 +239,7 @@ export default function VehicleDetails() {
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-full border rounded px-3 py-2"
                 />
+
                 <input
                   type="date"
                   value={endDate}
@@ -179,7 +252,9 @@ export default function VehicleDetails() {
                   disabled={checkingAvailability}
                   className="w-full px-4 py-2 rounded bg-gray-900 text-white"
                 >
-                  {checkingAvailability ? "Checking..." : "Check Availability"}
+                  {checkingAvailability
+                    ? "Checking..."
+                    : "Check Availability"}
                 </button>
 
                 {availabilityError && (
@@ -213,11 +288,21 @@ export default function VehicleDetails() {
 
       <ConfirmModal
         open={confirmOpen}
-        title={confirmType === "approve" ? "Approve Vehicle" : "Reject Vehicle"}
-        confirmText={confirmType === "approve" ? "Approve" : "Reject"}
+        title={
+          confirmType === "approve"
+            ? "Approve Vehicle"
+            : "Reject Vehicle"
+        }
+        confirmText={
+          confirmType === "approve" ? "Approve" : "Reject"
+        }
         loading={actionLoading}
         onCancel={() => setConfirmOpen(false)}
-        onConfirm={confirmType === "approve" ? approveVehicle : rejectVehicle}
+        onConfirm={
+          confirmType === "approve"
+            ? approveVehicle
+            : rejectVehicle
+        }
       />
 
       <AuthModal

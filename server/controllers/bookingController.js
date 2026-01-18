@@ -1,6 +1,7 @@
 const Booking = require("../models/Booking");
 const Vehicle = require("../models/Vehicle");
 const User = require("../models/User");
+const Payment = require("../models/Payment");
 
 const {
   sendBookingCancellationEmail,
@@ -54,6 +55,16 @@ exports.cancelBooking = async (req, res) => {
 
     booking.status = "CANCELLED";
     await booking.save();
+
+    const payment = await Payment.findOne({
+      booking: booking._id,
+      status: "SUCCESS",
+    });
+
+    if (payment) {
+      payment.status = "REFUND_PENDING";
+      await payment.save();
+    }
 
     const renter = await User.findById(booking.renter);
     const vehicle = await Vehicle.findById(booking.vehicle);
@@ -137,7 +148,13 @@ exports.getMyBookings = async (req, res) => {
     }
 
     let bookings = await Booking.find(query)
-      .populate("vehicle")
+      .populate({
+        path: "vehicle",
+        populate: {
+          path: "ownerId",
+          select: "name email",
+        },
+      })
       .sort({ createdAt: -1 });
 
     if (search) {
@@ -192,5 +209,21 @@ exports.getOwnerBookings = async (req, res) => {
   } catch (error) {
     console.error("Get owner bookings error:", error);
     res.status(500).json({ message: "Failed to fetch bookings" });
+  }
+};
+
+// GET BOOKED DATES FOR CALENDAR (PUBLIC)
+exports.getVehicleBookedDates = async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+
+    const bookings = await Booking.find({
+      vehicle: vehicleId,
+      status: "ACTIVE",
+    }).select("startDate endDate -_id");
+
+    res.json(bookings);
+  } catch {
+    res.status(500).json({ message: "Failed to fetch booked dates" });
   }
 };

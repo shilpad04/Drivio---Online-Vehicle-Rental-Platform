@@ -284,7 +284,7 @@ export default function AddVehicle() {
             messageModal.title === "Vehicle Submitted" ||
             messageModal.title === "Vehicle Updated"
           ) {
-            navigate("/dashboard/owner");
+            navigate("/vehicles/my");
           }
         }}
         onCancel={() => {

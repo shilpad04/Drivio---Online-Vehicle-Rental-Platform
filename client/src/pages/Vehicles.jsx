@@ -31,11 +31,18 @@ export default function Vehicles({ searchQuery, locationQuery }) {
 
   const [adminSearch, setAdminSearch] = useState("");
   const [ownerSearch, setOwnerSearch] = useState("");
+  const [debouncedOwnerSearch, setDebouncedOwnerSearch] = useState("");
 
   useEffect(() => {
-    if (locationQuery) {
-      setLocationFilter(locationQuery);
-    }
+    if (!isOwner) return;
+    const timer = setTimeout(() => {
+      setDebouncedOwnerSearch(ownerSearch);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [ownerSearch, isOwner]);
+
+  useEffect(() => {
+    setLocationFilter(locationQuery);
   }, [locationQuery]);
 
   useEffect(() => {
@@ -45,43 +52,28 @@ export default function Vehicles({ searchQuery, locationQuery }) {
 
         if (isAdmin) {
           const params = {};
-
-          if (statusFilter !== "all") {
-            params.status = statusFilter;
-          }
-
-          if (adminSearch && adminSearch.trim()) {
+          if (statusFilter !== "all") params.status = statusFilter;
+          if (adminSearch && adminSearch.trim())
             params.search = adminSearch.trim();
-          }
 
           res = await api.get("/vehicles/admin/all", { params });
           setVehicles(res.data);
 
         } else if (isOwner) {
           const params = {};
-
-          if (statusFilter !== "all") {
-            params.status = statusFilter;
-          }
-
-          if (ownerSearch && ownerSearch.trim()) {
-            params.search = ownerSearch.trim();
-          }
+          if (statusFilter !== "all") params.status = statusFilter;
+          if (debouncedOwnerSearch && debouncedOwnerSearch.trim())
+            params.search = debouncedOwnerSearch.trim();
 
           res = await api.get("/vehicles/my", { params });
           setVehicles(res.data);
 
         } else {
-          if (locationQuery && !locationFilter) {
-            return;
-          }
+          if (locationQuery && !locationFilter) return;
 
           const params = {};
-
-          if (searchQuery && searchQuery.trim()) {
+          if (searchQuery && searchQuery.trim())
             params.search = searchQuery.trim();
-          }
-
           if (locationFilter) params.location = locationFilter;
           if (vehicleType) params.vehicleType = vehicleType;
           if (category) params.category = category;
@@ -109,7 +101,7 @@ export default function Vehicles({ searchQuery, locationQuery }) {
     statusFilter,
     searchQuery,
     adminSearch,
-    ownerSearch,
+    debouncedOwnerSearch,
     vehicleType,
     category,
     locationFilter,
@@ -126,17 +118,14 @@ export default function Vehicles({ searchQuery, locationQuery }) {
     else navigate("/");
   };
 
-  const {
-    totalPages,
-    paginatedItems: paginatedVehicles,
-  } = paginate(vehicles, currentPage, ITEMS_PER_PAGE);
+  const { totalPages, paginatedItems: paginatedVehicles } = paginate(
+    vehicles,
+    currentPage,
+    ITEMS_PER_PAGE
+  );
 
   if (loading) {
-    return (
-      <div className="min-h-screen pt-32 text-center">
-        Loading...
-      </div>
-    );
+    return <div className="min-h-screen pt-32 text-center">Loading...</div>;
   }
 
   return (
@@ -176,6 +165,50 @@ export default function Vehicles({ searchQuery, locationQuery }) {
         </h1>
       </div>
 
+      {(isAdmin || isOwner) && (
+        <div className="flex flex-wrap gap-3 justify-end mb-8">
+          {isAdmin && (
+            <input
+              type="text"
+              value={adminSearch}
+              onChange={(e) => {
+                setAdminSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search vehicle"
+              className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm w-56"
+            />
+          )}
+
+          {isOwner && (
+            <input
+              type="text"
+              value={ownerSearch}
+              onChange={(e) => {
+                setOwnerSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search vehicle"
+              className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm w-56"
+            />
+          )}
+
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white shadow-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      )}
+
       {paginatedVehicles.length === 0 ? (
         <p className="text-gray-500">No vehicles found.</p>
       ) : (
@@ -201,9 +234,7 @@ export default function Vehicles({ searchQuery, locationQuery }) {
               key={i}
               onClick={() => setCurrentPage(i + 1)}
               className={`px-3 py-1 border rounded ${
-                currentPage === i + 1
-                  ? "bg-blue-600 text-white"
-                  : ""
+                currentPage === i + 1 ? "bg-blue-600 text-white" : ""
               }`}
             >
               {i + 1}
@@ -213,9 +244,7 @@ export default function Vehicles({ searchQuery, locationQuery }) {
           <button
             disabled={currentPage === totalPages}
             onClick={() =>
-              setCurrentPage((p) =>
-                Math.min(p + 1, totalPages)
-              )
+              setCurrentPage((p) => Math.min(p + 1, totalPages))
             }
             className="px-3 py-1 border rounded disabled:opacity-40"
           >

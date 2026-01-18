@@ -1,5 +1,6 @@
 const Review = require("../models/Review");
 const Booking = require("../models/Booking");
+const Vehicle = require("../models/Vehicle");
 
 // ADD REVIEW (RENTER ONLY)
 exports.addReview = async (req, res) => {
@@ -76,7 +77,7 @@ exports.addReview = async (req, res) => {
   }
 };
 
-// GET REVIEWS FOR A VEHICLE 
+// GET REVIEWS FOR A VEHICLE
 exports.getVehicleReviews = async (req, res) => {
   try {
     const { minRating, search } = req.query;
@@ -105,7 +106,7 @@ exports.getVehicleReviews = async (req, res) => {
   }
 };
 
-// ADMIN: GET ALL REVIEWS 
+// ADMIN: GET ALL REVIEWS
 exports.getAllReviewsForAdmin = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -129,8 +130,7 @@ exports.getAllReviewsForAdmin = async (req, res) => {
   }
 };
 
-
-// ADMIN — hide review 
+// ADMIN — hide review
 exports.hideReview = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -172,7 +172,7 @@ exports.unhideReview = async (req, res) => {
   }
 };
 
-// ADMIN — delete review 
+// ADMIN — delete review
 exports.deleteReview = async (req, res) => {
   try {
     if (req.user.role !== "ADMIN") {
@@ -186,6 +186,51 @@ exports.deleteReview = async (req, res) => {
 
     await review.deleteOne();
     res.json({ message: "Review deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// OWNER — get reviews for own vehicles 
+exports.getOwnerReviews = async (req, res) => {
+  try {
+    if (req.user.role !== "OWNER") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const { search, minRating } = req.query;
+
+    const vehicleQuery = {
+      ownerId: req.user._id,
+    };
+
+    if (search) {
+      vehicleQuery.name = { $regex: search, $options: "i" };
+    }
+
+    const vehicles = await Vehicle.find(vehicleQuery).select("_id name");
+
+    const vehicleIds = vehicles.map(v => v._id);
+
+    if (vehicleIds.length === 0) {
+      return res.json([]);
+    }
+
+    const reviewQuery = {
+      vehicleId: { $in: vehicleIds },
+      isHidden: { $ne: true },
+    };
+
+    if (minRating) {
+      reviewQuery.rating = { $gte: Number(minRating) };
+    }
+
+    const reviews = await Review.find(reviewQuery)
+      .populate("vehicleId", "name")
+      .populate("renterId", "name")
+      .sort({ createdAt: -1 });
+
+    res.json(reviews);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

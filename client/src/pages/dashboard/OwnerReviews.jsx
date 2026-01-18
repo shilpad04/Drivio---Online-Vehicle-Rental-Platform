@@ -9,6 +9,7 @@ export default function OwnerReviews() {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const navigate = useNavigate();
 
@@ -29,9 +30,13 @@ export default function OwnerReviews() {
     }
   };
 
-  const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE);
+  const filteredVehicles = vehicles.filter((v) =>
+    `${v.make} ${v.model}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredVehicles.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedVehicles = vehicles.slice(
+  const paginatedVehicles = filteredVehicles.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
   );
@@ -50,11 +55,24 @@ export default function OwnerReviews() {
         Back
       </button>
 
-      <h1 className="text-2xl font-bold mb-8">Reviews for My Vehicles</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Reviews for My Vehicles</h1>
 
-      {vehicles.length === 0 ? (
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+          placeholder="Search vehicle"
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white shadow-sm w-56"
+        />
+      </div>
+
+      {filteredVehicles.length === 0 ? (
         <p className="text-gray-600 text-center">
-          You have not added any vehicles yet.
+          No vehicles found.
         </p>
       ) : (
         <>
@@ -99,7 +117,6 @@ export default function OwnerReviews() {
                   </div>
                 </div>
 
-                {/* REVIEWS */}
                 <Reviews vehicleId={vehicle._id} />
               </div>
             ))}
@@ -110,19 +127,19 @@ export default function OwnerReviews() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+                className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
               >
                 Prev
               </button>
 
-              {[...Array(totalPages)].map((_, i) => (
+              {Array.from({ length: totalPages }).map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 text-sm border rounded ${
+                  className={`px-3 py-1.5 text-sm border rounded-lg ${
                     currentPage === i + 1
-                      ? "bg-blue-600 text-white"
-                      : "hover:bg-gray-100"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white hover:bg-gray-100"
                   }`}
                 >
                   {i + 1}
@@ -132,7 +149,7 @@ export default function OwnerReviews() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-3 py-1 text-sm border rounded disabled:opacity-40"
+                className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40"
               >
                 Next
               </button>

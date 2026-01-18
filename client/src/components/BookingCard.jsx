@@ -8,6 +8,9 @@ import { formatDate } from "../utils/formatDate";
 export default function BookingCard({ booking, role, refresh, amountPaid }) {
   const { vehicle, renter, startDate, endDate, status, _id } = booking;
 
+  // ✅ Added (safe, no behavior change)
+  const owner = vehicle?.ownerId;
+
   const [open, setOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -112,6 +115,15 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
               </p>
             )}
 
+            {/* ✅ Added: Owner details for RENTER */}
+            {role === "RENTER" && owner && (
+              <div className="pt-3 border-t">
+                <p className="font-medium mb-1">Owner Details</p>
+                <p>Name: {owner.name}</p>
+                <p className="break-all">Email: {owner.email}</p>
+              </div>
+            )}
+
             {(role === "OWNER" || role === "ADMIN") && renter && (
               <div className="pt-3 border-t">
                 <p className="font-medium mb-1">Renter Details</p>
@@ -150,9 +162,7 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
                     setShowCancelModal(true);
                   }}
                   className={`px-4 py-2 rounded-lg text-white ${
-                    hasStarted
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-red-600"
+                    hasStarted ? "bg-gray-400 cursor-not-allowed" : "bg-red-600"
                   }`}
                 >
                   Cancel Booking
@@ -166,7 +176,15 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
       <ConfirmModal
         open={showCancelModal}
         title="Cancel booking?"
-        description="This booking will be cancelled and cannot be undone."
+        description={
+          <div className="space-y-3">
+            <p>This booking will be cancelled and cannot be undone.</p>
+
+            <div className="bg-yellow-100 text-yellow-800 px-3 py-2 rounded-md text-sm font-medium">
+              Amount will be refunded in 5–6 business days
+            </div>
+          </div>
+        }
         confirmText="Yes, Cancel"
         danger
         loading={cancelling}
@@ -177,7 +195,18 @@ export default function BookingCard({ booking, role, refresh, amountPaid }) {
       <ConfirmModal
         open={showModifyModal}
         title="Modify booking?"
-        description="This will cancel your current booking. You’ll need to rebook and pay again."
+        description={
+          <div className="space-y-1.5">
+            <p>
+              Modifying this booking will cancel the current reservation so you
+              can make changes.
+            </p>
+
+            <p className="text-xs text-gray-400">
+              Payment details may update during rebooking.
+            </p>
+          </div>
+        }
         confirmText="Yes, Continue"
         loading={cancelling}
         onCancel={() => setShowModifyModal(false)}

@@ -23,12 +23,13 @@ export default function useVehicleDetails() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmType, setConfirmType] = useState(null);
 
+  const [bookedRanges, setBookedRanges] = useState([]);
+
   const isAdmin = user?.role === "ADMIN";
   const isOwner = user?.role === "OWNER";
   const isRenter = user?.role === "RENTER";
   const isGuest = !user;
 
-  /* ---------------- FETCH VEHICLE ---------------- */
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
@@ -61,25 +62,35 @@ export default function useVehicleDetails() {
     fetchVehicle();
   }, [id, isAdmin, isOwner, navigate, location.state]);
 
-  /* -------- RESET AVAILABILITY ON DATE CHANGE -------- */
+  useEffect(() => {
+    if (!vehicle?._id) return;
+
+    const fetchBookedDates = async () => {
+      try {
+        const res = await api.get(`/bookings/vehicle/${vehicle._id}`);
+        setBookedRanges(res.data || []);
+      } catch {
+        setBookedRanges([]);
+      }
+    };
+
+    fetchBookedDates();
+  }, [vehicle?._id]);
+
   useEffect(() => {
     setIsAvailable(false);
     setAvailabilityError("");
   }, [startDate, endDate]);
 
-  /* -------- RESUME AFTER LOGIN (IMPORTANT FIX) -------- */
   useEffect(() => {
     if (!user) return;
 
     const pending = sessionStorage.getItem("pendingBookVehicle");
-
     if (pending === id) {
       sessionStorage.removeItem("pendingBookVehicle");
-      // Stay on same page, allow user to continue booking
     }
   }, [user, id]);
 
-  /* ---------------- ADMIN ACTIONS ---------------- */
   const approveVehicle = async () => {
     try {
       setActionLoading(true);
@@ -102,7 +113,6 @@ export default function useVehicleDetails() {
     }
   };
 
-  /* ---------------- CHECK AVAILABILITY ---------------- */
   const checkAvailability = async () => {
     if (!startDate || !endDate) {
       setAvailabilityError("Please select both start and end dates");
@@ -146,7 +156,6 @@ export default function useVehicleDetails() {
     }
   };
 
-  /* ---------------- BOOK NOW ---------------- */
   const handleBookNow = () => {
     if (!user) {
       sessionStorage.setItem("pendingBookVehicle", id);
@@ -158,6 +167,16 @@ export default function useVehicleDetails() {
 
     navigate(`/vehicles/${vehicle._id}/availability`, {
       state: { startDate, endDate },
+    });
+  };
+
+  const isDateBooked = (date) => {
+    return bookedRanges.some((range) => {
+      const start = new Date(range.startDate);
+      const end = new Date(range.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      return date >= start && date <= end;
     });
   };
 
@@ -186,5 +205,7 @@ export default function useVehicleDetails() {
     isOwner,
     isRenter,
     isGuest,
+    bookedRanges,
+    isDateBooked,
   };
 }

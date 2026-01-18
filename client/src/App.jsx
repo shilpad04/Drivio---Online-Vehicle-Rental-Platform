@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -49,6 +50,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Navbar
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -80,10 +82,7 @@ function App() {
         <Route
           path="/vehicles"
           element={
-            <Vehicles
-              searchQuery={searchQuery}
-              locationQuery={locationQuery}
-            />
+            <Vehicles searchQuery={searchQuery} locationQuery={locationQuery} />
           }
         />
         <Route path="/vehicles/:id" element={<VehicleDetails />} />

@@ -9,6 +9,8 @@ export default function StatusBadge({ status }) {
     SUCCESS: "bg-green-100 text-green-700",
     FAILED: "bg-red-100 text-red-700",
     CREATED: "bg-red-100 text-red-700",
+    REFUND_PENDING: "bg-yellow-100 text-yellow-800",
+    REFUNDED: "bg-green-100 text-green-700",
 
     // VEHICLES
     approved: "bg-green-100 text-green-700",

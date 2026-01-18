@@ -5,7 +5,7 @@ const paymentSchema = new mongoose.Schema(
     booking: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",
-      default: null, 
+      default: null,
     },
 
     renter: {
@@ -47,8 +47,30 @@ const paymentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["CREATED", "SUCCESS", "FAILED"],
+      enum: [
+        "CREATED",
+        "SUCCESS",
+        "FAILED",
+        "REFUND_PENDING",
+        "REFUNDED",
+      ],
       default: "CREATED",
+    },
+
+    razorpayRefundId: {
+      type: String,
+      default: null,
+    },
+
+    refundedAt: {
+      type: Date,
+      default: null,
+    },
+
+    refundedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
   },
   { timestamps: true }
